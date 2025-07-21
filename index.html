@@ -1,0 +1,2048 @@
+<!DOCTYPE html>
+<html lang="bn">
+  <head>
+    <script>
+      document.addEventListener("contextmenu", (event) =>
+        event.preventDefault()
+      );
+      document.addEventListener("keydown", (event) => {
+        if (
+          (event.ctrlKey &&
+            ["u", "s", "i", "j"].includes(event.key.toLowerCase())) ||
+          event.key === "F12"
+        ) {
+          event.preventDefault();
+        }
+      });
+    </script>
+
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Online Exam</title>
+    <!-- Chart.js CDN -->
+
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+      @import url("https://fonts.googleapis.com/css2?family=Hind+Siliguri:wght@300;400;500;600;700&display=swap");
+
+      body {
+        font-family: "Hind Siliguri", sans-serif;
+        margin: 0;
+        padding: 0;
+        background-color: #f4f4f4;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        height: 100vh;
+      }
+
+      .container {
+        font-family: "Hind Siliguri", sans-serif;
+        width: 100%;
+        margin: auto;
+        background-color: white;
+        padding: 20px;
+        border-radius: 10px;
+        box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        min-height: 80vh;
+      }
+
+      .exam-content {
+        padding: 20px;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+      }
+
+      h1 {
+        color: #1b0b54;
+        text-align: center;
+        margin-bottom: 10px;
+      }
+
+      #timer {
+        font-size: 20px;
+        color: #1b0b54;
+        margin-bottom: 5px;
+        font-weight: normal;
+        text-align: center;
+      }
+
+      #exam-info {
+        font-size: 16px;
+        color: black;
+        margin-bottom: 20px;
+        text-align: center;
+      }
+
+      #exam {
+        width: 100%;
+        min-height: 100px;
+      }
+
+      .chart-container {
+        width: 200px;
+        height: 200px;
+        margin: 10px auto;
+        background-color: #f9f9f9;
+        border-radius: 15px;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+        display: none;
+        padding: 10px;
+      }
+
+      .chart-container.visible {
+        display: block;
+      }
+
+      .question-container {
+        text-align: left;
+        margin-bottom: 20px;
+        display: block;
+      }
+
+      .question-label {
+        font-weight: bold;
+        color: #1b0b54;
+        margin-bottom: 10px;
+      }
+
+      .options {
+        margin-top: 10px;
+      }
+
+      .option {
+        margin-bottom: 8px;
+        display: flex;
+        align-items: center;
+        cursor: pointer;
+        padding: 5px;
+        border-radius: 5px;
+        text-transform: uppercase;
+      }
+
+      .circle {
+        width: 20px;
+        height: 20px;
+        border-radius: 50%;
+        border: 2px solid #1b0b54;
+        margin-right: 10px;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        color: #1b0b54;
+        font-weight: bold;
+        font-size: 18px;
+      }
+
+      .selected .circle {
+        background-color: #1b0b54;
+        color: white;
+      }
+
+      .correct-text {
+        color: green !important;
+      }
+
+      .incorrect-text {
+        color: #ff0800 !important;
+      }
+
+      .unattempted-text {
+        color: orange !important;
+      }
+
+      #submitBtn {
+        font-family: hind siliguri;
+        padding: 15px 30px;
+        background-color: #1b0b54;
+        color: white;
+        border: none;
+        cursor: pointer;
+        font-size: 18px;
+        font-weight: bold;
+        border-radius: 10px;
+        margin-top: 20px;
+        width: 200px;
+        transition: background-color 0.3s ease;
+      }
+
+      #submitBtn:hover {
+        background-color: #1b0b54;
+      }
+
+      .popup {
+        position: fixed;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        background-color: white;
+        padding: 20px;
+        width: 300px;
+        box-shadow: 0 0 10px rgba(0, 0, 0, 0.2);
+        border-radius: 10px;
+        text-align: center;
+        display: none;
+        z-index: 1000;
+        transition: transform 0.5s ease, opacity 0.5s ease;
+      }
+
+      .popup.slide-out {
+        transform: translate(-50%, -100%);
+        opacity: 0;
+      }
+
+      .popup-header {
+        background-color: #1b0b54;
+        color: white;
+        padding: 10px;
+        font-size: 20px;
+        font-weight: bold;
+        border-radius: 10px 10px 0 0;
+      }
+
+      .popup-body {
+        padding: 15px;
+      }
+
+      .popup-body p {
+        margin: 10px 0;
+      }
+
+      .confirm-btn {
+        font-family: hind siliguri;
+        background-color: #34c759;
+        color: white;
+        padding: 8px 15px;
+        border: none;
+        cursor: pointer;
+        font-size: 14px;
+        border-radius: 5px;
+        margin: 5px;
+      }
+
+      .confirm-btn:hover {
+        background-color: #34c759;
+      }
+
+      .cancel-btn {
+        background-color: #ff3b30;
+        color: white;
+        padding: 8px 15px;
+        border: none;
+        cursor: pointer;
+        font-size: 14px;
+        border-radius: 5px;
+        margin: 5px;
+      }
+
+      .cancel-btn:hover {
+        background-color: #e02b21;
+      }
+
+      .explanation-dropdown {
+        display: none;
+        margin-top: 10px;
+      }
+
+      .explanation-dropdown.visible {
+        display: block;
+      }
+
+      .explanation-btn {
+        background-color: #1b0b54;
+        color: white;
+        padding: 8px 15px;
+        border: none;
+        border-radius: 5px;
+        cursor: pointer;
+        font-size: 14px;
+        font-family: "Hind Siliguri", sans-serif;
+        width: 40%;
+        text-align: left;
+        position: relative;
+      }
+
+      .explanation-btn:hover {
+        background-color: #1b0b54;
+      }
+
+      .explanation-btn::after {
+        content: "▼";
+        position: absolute;
+        right: 10px;
+        font-size: 12px;
+      }
+
+      .explanation-btn.active::after {
+        content: "▲";
+      }
+
+      .explanation-content {
+        display: none;
+        padding: 15px;
+        background-color: #f9f9f9;
+        border: 1px solid #ccc;
+        border-radius: 5px;
+        font-size: 14px;
+        color: #000000;
+        text-align: left;
+        max-height: 450px;
+        overflow-y: auto;
+        margin-top: 5px;
+      }
+
+      .explanation-content.visible {
+        display: block;
+      }
+
+      .explanation-content p {
+        margin: 0 0 10px 0;
+      }
+
+      .explanation-content ul {
+        margin: 0;
+        padding-left: 20px;
+      }
+
+      .explanation-content li {
+        margin-bottom: 5px;
+      }
+
+      .explanation-content strong {
+        color: #1b0b54;
+      }
+
+      .explanation-label {
+        font-weight: bold;
+        color: #1b0b54;
+        margin-bottom: 10px;
+        display: block;
+      }
+
+      .locked .option {
+        pointer-events: none;
+        cursor: default;
+      }
+
+      .locked .option.selected {
+        pointer-events: none;
+        cursor: default;
+      }
+    </style>
+  </head>
+
+  <body>
+    <div class="container" id="examContainer">
+      <div class="exam-content">
+        <h1>কেমিস্ট্রি ১ম অনুশীলন</h1>
+        <div id="timer"></div>
+        <div id="exam-info"></div>
+        <div class="chart-container">
+          <canvas id="scoreChart"></canvas>
+        </div>
+        <div id="exam">
+          <!-- Questions will be generated dynamically -->
+        </div>
+        <button id="submitBtn">সাবমিট</button>
+      </div>
+    </div>
+
+    <div class="popup" id="scorePopup">
+      <div class="popup-header">তোমার স্কোর</div>
+      <div class="popup-body">
+        <p><strong>মোট প্রশ্ন:</strong> <span id="totalQuestions"></span></p>
+        <p>
+          <strong>উত্তর দিয়েছো:</strong>
+          <span style="color: #000000" id="answered"></span>
+        </p>
+        <p>
+          <strong>সঠিক উত্তর:</strong>
+          <span style="color: #0ab853" id="correctAnswers"></span>
+        </p>
+        <p>
+          <strong>ভুল উত্তর:</strong>
+          <span style="color: #f81010" id="wrongAnswers"></span>
+        </p>
+        <p>
+          <strong>অনুত্তরিত:</strong>
+          <span style="color: #ffc801" id="unanswered"></span>
+        </p>
+        <p><strong>তোমার চূড়ান্ত স্কোর:</strong></p>
+        <h2 style="color: #1b0b54"><span id="finalScore"></span></h2>
+        <form id="scoreForm" action="https://formspree.io/f/xpby" method="POST">
+          <input type="hidden" name="userID" id="formUserID" />
+          <input type="hidden" name="finalScore" id="formFinalScore" />
+          <input type="hidden" name="correctAnswers" id="formCorrectAnswers" />
+          <input type="hidden" name="wrongAnswers" id="formWrongAnswers" />
+          <input type="hidden" name="unanswered" id="formUnanswered" />
+          <button
+            type="submit"
+            class="confirm-btn"
+            style="background-color: #1b0b54"
+          >
+            <b>ওকে</b>
+          </button>
+        </form>
+      </div>
+    </div>
+
+    <div class="popup" id="confirmPopup">
+      <div class="popup-header">কনফার্ম করো</div>
+      <div class="popup-body">
+        <p>
+          ভালো করে দেখে নাও! <br />
+          পরীক্ষা শেষ করতে চাও তো?
+        </p>
+        <button class="confirm-btn" onclick="confirmSubmit()">
+          <b>হ্যাঁ</b>
+        </button>
+        <button class="cancel-btn" onclick="cancelSubmit()"><b>না</b></button>
+      </div>
+    </div>
+
+    <script>
+      let chartInstance = null;
+
+      document.addEventListener("DOMContentLoaded", function () {
+        console.log("DOM fully loaded and parsed");
+        const examContainer = document.getElementById("examContainer");
+        if (!examContainer) {
+          console.error("Exam container not found!");
+          return;
+        }
+        try {
+          sessionStorage.setItem("isLoggedIn", "true");
+          sessionStorage.setItem("userID", "anonymous");
+          console.log(
+            "Session storage set: isLoggedIn = true, userID = anonymous"
+          );
+        } catch (e) {
+          console.error("Session storage error:", e);
+        }
+        examContainer.style.display = "block";
+        console.log("Exam container displayed");
+        startTimer();
+        generateQuestions();
+
+        window.addEventListener("beforeunload", function (event) {
+          if (
+            examContainer.style.display === "block" &&
+            sessionStorage.getItem("isLoggedIn") === "true"
+          ) {
+            autoSubmitScore();
+          }
+        });
+      });
+
+      const questions = [
+        {
+          id: 1,
+          question: "NH₃ অণুর কেন্দ্রীয় পরমাণুতে কোন প্রকার সংকরণ ঘটে?",
+          options: {
+            a: "sp³d",
+            b: "sp",
+            c: "sp²",
+            d: "sp³",
+          },
+          correct: "d",
+          explanation:
+            "<p>অ্যামোনিয়া (NH₃) অণুতে নাইট্রোজেন পরমাণু কেন্দ্রীয় পরমাণু হিসেবে কাজ করে। এর যোজনী স্তরে তিনটি বন্ধন জোড় ইলেকট্রন এবং একটি মুক্তজোড় ইলেকট্রন থাকে। এই চারটি ইলেকট্রন জোড় ত্রিমাত্রিকভাবে এমনভাবে সজ্জিত হয় যাতে তাদের মধ্যে বিকর্ষণ সর্বনিম্ন হয়। ফলে, নাইট্রোজেন পরমাণুর sp³ সংকরণ ঘটে।</p>",
+        },
+        {
+          id: 2,
+          question:
+            "যৌগের কেন্দ্রীয় পরমাণুটি dsp³ সংকরিত হলে আকৃতি কীরূপ হয়?",
+          options: {
+            a: "সমতলীয় বর্গাকার",
+            b: "ত্রিকোণীয় দ্বি-পিরামিড",
+            c: "অষ্টতলকীয়",
+            d: "পঞ্চভুজীয় দ্বি-পিরামিড",
+          },
+          correct: "b",
+          explanation:
+            "<p>যখন কোনো যৌগের কেন্দ্রীয় পরমাণু dsp³ সংকরিত হয়, তখন এর আকৃতি ত্রিকোণীয় দ্বি-পিরামিডীয় হয়। এই ধরনের সংকরণে একটি s, তিনটি p এবং একটি d অরবিটাল মিলে পাঁচটি সংকর অরবিটাল তৈরি করে। এই পাঁচটি সংকর অরবিটাল ত্রিকোণীয় দ্বি-পিরামিড আকৃতিতে সজ্জিত থাকে।</p>",
+        },
+        {
+          id: 3,
+          question: "অ্যামোনিয়া অণুতে বন্ধন কোণের পরিমাণ কত?",
+          options: {
+            a: "104.5°",
+            b: "107°",
+            c: "109.5°",
+            d: "120°",
+          },
+          correct: "b",
+          explanation:
+            "<p>অ্যামোনিয়া (NH₃) অণুতে নাইট্রোজেন পরমাণুর sp³ সংকরণ ঘটে। আদর্শ sp³ সংকরণে বন্ধন কোণ ১০৯.৫° হয়। কিন্তু অ্যামোনিয়াতে একটি মুক্তজোড় ইলেকট্রন থাকায়, মুক্তজোড়-বন্ধনজোড় বিকর্ষণের কারণে বন্ধন কোণ কমে ১০৭° হয়। এটি VSEPR তত্ত্ব দ্বারা ব্যাখ্যা করা যায়।</p>",
+        },
+        {
+          id: 4,
+          question: "শ্রেণি বিভাগে বরফ নিম্নের কোন শ্রেণির কেলাস?",
+          options: {
+            a: "টেট্রাগোনাল",
+            b: "মনোক্লিনিক",
+            c: "রম্বোহেড্রাল",
+            d: "অর্থোরম্বিক",
+          },
+          correct: "c",
+          explanation:
+            "<p>বরফ হলো একটি কেলাসিত কঠিন পদার্থ। এর কেলাস কাঠামো রম্বোহেড্রাল বা ত্রিকোণীয় শ্রেণির অন্তর্ভুক্ত। বরফের অণুগুলো হাইড্রোজেন বন্ধনের মাধ্যমে একটি সুনির্দিষ্ট ত্রিমাত্রিক জালিকা তৈরি করে, যা এর রম্বোহেড্রাল আকৃতি দেয়।</p>",
+        },
+        {
+          id: 5,
+          question: "[Fe(CN)₆]⁴⁻ আয়নের কেন্দ্রীয় পরমাণুর কী ধরনের সংকরণ ঘটে?",
+          options: {
+            a: "sp³d²",
+            b: "sp³d",
+            c: "sp³d³",
+            d: "d²sp³",
+          },
+          correct: "d",
+          explanation:
+            "<p>[Fe(CN)₆]⁴⁻ আয়নে কেন্দ্রীয় পরমাণু হলো আয়রন (Fe²⁺)। সায়ানাইড (CN⁻) একটি শক্তিশালী লিগ্যান্ড। এই শক্তিশালী লিগ্যান্ডের উপস্থিতিতে Fe²⁺ এর ইলেক্ট্রনগুলো জোড়বদ্ধ হয়, যার ফলে অভ্যন্তরীণ d অরবিটাল সংকরণে অংশ নেয়। তাই, d²sp³ সংকরণ ঘটে, যা অষ্টতলকীয় জ্যামিতিক গঠন তৈরি করে।</p>",
+        },
+        {
+          id: 6,
+          question: "SO₂ অণুর কেন্দ্রীয় পরমাণুর সংকরণ অবস্থা কোনটি?",
+          options: {
+            a: "sp³d",
+            b: "sp³",
+            c: "sp²",
+            d: "sp",
+          },
+          correct: "c",
+          explanation:
+            "<p>সালফার ডাই-অক্সাইড (SO₂) অণুতে সালফার কেন্দ্রীয় পরমাণু। সালফারের যোজনী স্তরে ৪টি ইলেকট্রন থাকে। এর মধ্যে দুটি অক্সিজেন পরমাণুর সাথে দ্বিবন্ধন গঠন করে এবং একটি মুক্তজোড় ইলেকট্রন থাকে। ফলে সালফারের sp² সংকরণ ঘটে। মুক্তজোড় ইলেকট্রনের বিকর্ষণের কারণে অণুর আকৃতি কৌণিক হয়।</p>",
+        },
+        {
+          id: 8,
+          question: "গ্রাফাইটে কোন ধরনের সংকরণ ঘটে?",
+          options: {
+            a: "sp",
+            b: "sp²",
+            c: "sp³",
+            d: "sp³d",
+          },
+          correct: "b",
+          explanation:
+            "<p>গ্রাফাইট কার্বনের একটি বহুরূপী রূপ। গ্রাফাইটের প্রতিটি কার্বন পরমাণু sp² সংকরিত অবস্থায় থাকে। প্রতিটি কার্বন পরমাণু তিনটি অন্য কার্বন পরমাণুর সাথে সমতলীয় ত্রিকোণাকার বন্ধন তৈরি করে। একটি করে অসংকরিত p অরবিটাল লম্বভাবে থাকে এবং এদের মধ্যে পার্শ্বিক অতিক্রমের মাধ্যমে সঞ্চারণশীল π বন্ধন তৈরি হয়, যা গ্রাফাইটের বিদ্যুৎ পরিবাহিতার কারণ।</p>",
+        },
+        {
+          id: 9,
+          question: "কোন সংকরায়ণ হলে pie বন্ধন গঠিত হয়?",
+          options: {
+            a: "sp³",
+            b: "sp²",
+            c: "sp",
+            d: "sp³d",
+          },
+          correct: "b",
+          explanation:
+            "<p>π (পাই) বন্ধন গঠনের জন্য অসংকরিত p অরবিটাল প্রয়োজন। sp² এবং sp সংকরণের ক্ষেত্রে অসংকরিত p অরবিটাল থাকে। sp² সংকরণে একটি অসংকরিত p অরবিটাল থাকে যা পার্শ্বিক অতিক্রমের মাধ্যমে π বন্ধন গঠন করে। অন্যদিকে, sp³ সংকরণে কোনো অসংকরিত p অরবিটাল থাকে না, তাই এতে π বন্ধন গঠিত হয় না।</p>",
+        },
+        {
+          id: 10,
+          question: "C₂H₂ যৌগে C পরমাণুর কোন প্রকার সংকরণ ঘটেছে?",
+          options: {
+            a: "sp",
+            b: "sp²",
+            c: "sp³",
+            d: "sp³d",
+          },
+          correct: "a",
+          explanation:
+            "<p>ইথাইন (C₂H₂) যৌগে প্রতিটি কার্বন পরমাণু একটি কার্বন-কার্বন ত্রিবন্ধন এবং একটি কার্বন-হাইড্রোজেন একক বন্ধন গঠন করে। প্রতিটি কার্বনের দুটি σ (সিগমা) বন্ধন থাকায় sp সংকরণ ঘটে। sp সংকরণের ফলে সরলরৈখিক জ্যামিতিক আকৃতি এবং দুটি অসংকরিত p অরবিটাল থাকে যা দুটি π বন্ধন তৈরি করে।</p>",
+        },
+        {
+          id: 12,
+          question: "sp³ সংকরিত যৌগ নয় কোনটি?",
+          options: {
+            a: "BF₃",
+            b: "NH₃",
+            c: "H₂O",
+            d: "CH₄",
+          },
+          correct: "a",
+          explanation:
+            "<p>মিথেন (CH₄), অ্যামোনিয়া (NH₃) এবং পানি (H₂O) এই যৌগগুলোতে কেন্দ্রীয় পরমাণুর sp³ সংকরণ ঘটে। কিন্তু বোরন ট্রাইফ্লুরাইড (BF₃) এর কেন্দ্রীয় পরমাণু বোরন sp² সংকরিত। এর কারণ হলো বোরনের যোজনী স্তরে তিনটি ইলেকট্রন থাকে যা তিনটি ফ্লোরিন পরমাণুর সাথে তিনটি সিগমা বন্ধন তৈরি করে। এতে কোনো মুক্তজোড় ইলেকট্রন থাকে না, তাই এটি সমতলীয় ত্রিকোণাকার আকৃতি ধারণ করে।</p>",
+        },
+        {
+          id: 13,
+          question: "ইথিলিনে কার্বন-কার্বন কী সংকরণ বিদ্যমান?",
+          options: {
+            a: "sp",
+            b: "sp²",
+            c: "sp³",
+            d: "sp³d",
+          },
+          correct: "b",
+          explanation:
+            "<p>ইথিলিন (C₂H₄) যৌগে প্রতিটি কার্বন পরমাণু একটি কার্বন-কার্বন দ্বিবন্ধন এবং দুটি কার্বন-হাইড্রোজেন একক বন্ধন গঠন করে। প্রতিটি কার্বন পরমাণুর চারপাশে তিনটি সিগমা বন্ধন এবং একটি পাই বন্ধন থাকে। এই কারণে প্রতিটি কার্বনের sp² সংকরণ ঘটে, যা অণুকে সমতলীয় ত্রিকোণাকার আকৃতি প্রদান করে।</p>",
+        },
+        {
+          id: 14,
+          question: "কোন যৌগটির বন্ধন কোণ সবচেয়ে ছোট?",
+          options: {
+            a: "H₂O",
+            b: "NCl₃",
+            c: "H₂S",
+            d: "PH₃",
+          },
+          correct: "c",
+          explanation:
+            "<p>এই যৌগগুলোর মধ্যে H₂S এর বন্ধন কোণ সবচেয়ে ছোট (প্রায় ৯২.১°)। এর কারণ হলো, সালফার পরমাণুর আকার অক্সিজেনের চেয়ে বড় এবং তড়িৎ ঋণাত্মকতা কম। এর ফলে সালফার হাইড্রোজেন বন্ধনে ইলেকট্রন মেঘের বিকর্ষণ কম হয় এবং বন্ধন কোণ কমে যায়। H₂O এর বন্ধন কোণ ১০৪.৫°, NCl₃ এর ১০৭.৮° এবং PH₃ এর ৯৩.৫°।</p>",
+        },
+        {
+          id: 15,
+          question: "H₂O অণুর বা পানির বন্ধন কোণ কত?",
+          options: {
+            a: "104.5°",
+            b: "107°",
+            c: "109.5°",
+            d: "180°",
+          },
+          correct: "a",
+          explanation:
+            "<p>পানি (H₂O) অণুতে অক্সিজেন পরমাণুর sp³ সংকরণ ঘটে। এতে দুটি বন্ধনজোড় এবং দুটি মুক্তজোড় ইলেকট্রন থাকে। এই মুক্তজোড় ইলেকট্রনগুলো বন্ধনজোড় ইলেকট্রনের চেয়ে বেশি স্থান দখল করে এবং তাদের বিকর্ষণ বলও বেশি হয়। ফলে মুক্তজোড়-বন্ধনজোড় বিকর্ষণের কারণে বন্ধন কোণ ১০৯.৫° থেকে কমে ১০৪.৫° হয়।</p>",
+        },
+        {
+          id: 17,
+          question: "PCl₅ অণুর গঠন কীরূপ?",
+          options: {
+            a: "ত্রিকোণাকার দ্বি-পিরামিডীয়",
+            b: "অষ্টতলকীয়",
+            c: "সমতলীয় ত্রিকোণাকার",
+            d: "চতুস্তলকীয়",
+          },
+          correct: "a",
+          explanation:
+            "<p>ফসফরাস পেন্টাক্লোরাইড (PCl₅) অণুতে কেন্দ্রীয় পরমাণু ফসফরাসের sp³d সংকরণ ঘটে। এই সংকরণের ফলে পাঁচটি সংকর অরবিটাল তৈরি হয়, যা ত্রিকোণাকার দ্বি-পিরামিডীয় জ্যামিতিক গঠন তৈরি করে। এর মধ্যে তিনটি বন্ধন নিরক্ষীয় তলে ১২০° কোণে থাকে এবং দুটি বন্ধন অক্ষীয় অবস্থানে ৯০° কোণে থাকে।</p>",
+        },
+        {
+          id: 18,
+          question: "বন্ধন কোণের কোন ক্রমটি সঠিক?",
+          options: {
+            a: "NH₃ > PH₃ > AsH₃ > SbH₃",
+            b: "PH₃ > AsH₃ > SbH₃ > NH₃",
+            c: "AsH₃ > SbH₃ > NH₃ > PH₃",
+            d: "SbH₃ > NH₃ > PH₃ > AsH₃",
+          },
+          correct: "a",
+          explanation:
+            "<p>কেন্দ্রীয় পরমাণুর আকার বৃদ্ধির সাথে সাথে বন্ধন কোণ হ্রাস পায়। NH₃, PH₃, AsH₃, SbH₃ যৌগগুলোতে কেন্দ্রীয় পরমাণু N, P, As, Sb একই গ্রুপের সদস্য। এদের আকার ক্রমান্বয়ে বৃদ্ধি পায়। কেন্দ্রীয় পরমাণুর আকার যত বড় হয়, তার মুক্তজোড় ইলেকট্রনগুলো বন্ধনজোড় ইলেকট্রনগুলোকে তত কম বিকর্ষণ করে, ফলে বন্ধন কোণ কমে যায়। তাই সঠিক ক্রম হলো NH₃ (১০৭°) > PH₃ (৯৩.৫°) > AsH₃ (৯১.৮°) > SbH₃ (৯০.২°)।</p>",
+        },
+        {
+          id: 20,
+          question: "XeF₂ যৌগে মুক্তজোড় ইলেকট্রনের সংখ্যা কয়টি?",
+          options: {
+            a: "১ টি",
+            b: "২ টি",
+            c: "৩ টি",
+            d: "৮ টি",
+          },
+          correct: "c",
+          explanation:
+            "<p>জেনন ডাইফ্লুরাইড (XeF₂) যৌগে কেন্দ্রীয় পরমাণু জেনন (Xe) এর যোজনী স্তরে ৮টি ইলেকট্রন থাকে। এর মধ্যে ২টি ফ্লোরিন পরমাণুর সাথে বন্ধন গঠন করে, অর্থাৎ ২টি বন্ধনজোড় ইলেকট্রন থাকে। বাকি (৮-২) = ৬টি ইলেকট্রন ৩টি মুক্তজোড় ইলেকট্রন হিসেবে থাকে। তাই XeF₂ যৌগে মুক্তজোড় ইলেকট্রনের সংখ্যা ৩টি।</p>",
+        },
+        {
+          id: 21,
+          question:
+            "নিচের কোন যৌগের অণুতে মুক্ত জোড় ইলেকট্রন বা নিঃসঙ্গ ইলেকট্রন যুগল সংখ্যা সর্বাধিক?",
+          options: {
+            a: "HCl",
+            b: "NH₃",
+            c: "H₂O",
+            d: "H₂S",
+          },
+          correct: "a",
+          explanation:
+            "<p>মুক্তজোড় ইলেকট্রন সংখ্যা: HCl এ Cl এর ৩টি মুক্তজোড়; NH₃ এ N এর ১টি মুক্তজোড়; H₂O এ O এর ২টি মুক্তজোড়; H₂S এ S এর ২টি মুক্তজোড়। তাই HCl এ মুক্তজোড় ইলেকট্রন যুগল সংখ্যা সর্বাধিক।</p>",
+        },
+        {
+          id: 22,
+          question:
+            "NH₃ অণুর জ্যামিতিক আকৃতি বিকৃত চতুস্তলকীয় হওয়ার কারণ কী?",
+          options: {
+            a: "বন্ধন জোড়-বন্ধন জোড় ইলেকট্রনের বিকর্ষণ",
+            b: "বন্ধন জোড়-মুক্ত জোড় ইলেকট্রনের আকর্ষণ",
+            c: "বন্ধন জোড়-মুক্ত জোড় ইলেকট্রনের বিকর্ষণ",
+            d: "বন্ধন জোড়-বন্ধন জোড় ইলেকট্রনের আকর্ষণ",
+          },
+          correct: "c",
+          explanation:
+            "<p>অ্যামোনিয়া (NH₃) অণুর কেন্দ্রীয় পরমাণু নাইট্রোজেনে একটি মুক্তজোড় ইলেকট্রন এবং তিনটি বন্ধনজোড় ইলেকট্রন থাকে। VSEPR তত্ত্ব অনুসারে, মুক্তজোড়-বন্ধনজোড় ইলেকট্রনের বিকর্ষণ বন্ধনজোড়-বন্ধনজোড় ইলেকট্রনের বিকর্ষণের চেয়ে বেশি শক্তিশালী হয়। এই অতিরিক্ত বিকর্ষণের কারণে বন্ধন কোণ ১০৯.৫° থেকে কমে ১০৭° হয় এবং অণুর আকৃতি বিকৃত চতুস্তলকীয় বা পিরামিডীয় হয়।</p>",
+        },
+        {
+          id: 23,
+          question: "কোন যৌগের আকৃতি সরলরৈখিক?",
+          options: {
+            a: "CO₂",
+            b: "NH₃",
+            c: "CH₄",
+            d: "BF₃",
+          },
+          correct: "a",
+          explanation:
+            "<p>কার্বন ডাই-অক্সাইড (CO₂) অণুর কেন্দ্রীয় পরমাণু কার্বনের sp সংকরণ ঘটে। এতে কোনো মুক্তজোড় ইলেকট্রন না থাকায় এবং দুটি দ্বিবন্ধন গঠিত হওয়ায়, অণুর আকৃতি সরলরৈখিক হয় এবং বন্ধন কোণ ১৮০° হয়। NH₃ এর আকৃতি পিরামিডীয়, CH₄ এর চতুস্তলকীয় এবং BF₃ এর সমতলীয় ত্রিকোণাকার।</p>",
+        },
+        {
+          id: 24,
+          question: "নিচের কোন যৌগটির গঠন আকৃতি চতুস্তলকীয় নয়?",
+          options: {
+            a: "CCl₄",
+            b: "NH4",
+            c: "C4",
+            d: "SF4",
+          },
+          correct: "d",
+          explanation:
+            "<p>কার্বন টেট্রাক্লোরাইড (CCl₄) এবং অ্যামোনিয়াম আয়ন (NH₄⁺) উভয়ই চতুস্তলকীয় আকৃতির। CCl₄ এ কার্বনের sp³ সংকরণ এবং NH₄⁺ এ নাইট্রোজেনের sp³ সংকরণ ঘটে। কিন্তু সালফার টেট্রাফ্লুরাইড (SF₄) এর কেন্দ্রীয় সালফার পরমাণুর sp³d সংকরণ ঘটে এবং এতে একটি মুক্তজোড় ইলেকট্রন থাকায় এর আকৃতি স-স (seesaw) এর মতো হয়, যা চতুস্তলকীয় নয়।</p>",
+        },
+        {
+          id: 25,
+          question: "নিচের কোনটির বন্ধন কোণ সবচেয়ে বেশি?",
+          options: {
+            a: "মিথেন",
+            b: "অ্যামোনিয়া",
+            c: "পানি",
+            d: "কার্বন ডাই-অক্সাইড",
+          },
+          correct: "d",
+          explanation:
+            "<p>এই যৌগগুলোর মধ্যে কার্বন ডাই-অক্সাইড (CO₂) এর বন্ধন কোণ ১৮০°, যা সরলরৈখিক আকৃতির কারণে হয়। মিথেনের বন্ধন কোণ ১০৯.৫°, অ্যামোনিয়ার বন্ধন কোণ ১০৭° এবং পানির বন্ধন কোণ ১০৪.৫°। মুক্তজোড় ইলেকট্রনের উপস্থিতি বন্ধন কোণ হ্রাস করে।</p>",
+        },
+        {
+          id: 26,
+          question: "CH₃–CH=CH₂ যৌগে কার্বন পরমাণুগুলোর সংকরণ কীরূপ?",
+          options: {
+            a: "sp, sp²",
+            b: "sp, sp³",
+            c: "sp², sp³",
+            d: "sp, sp², sp³",
+          },
+          correct: "c",
+          explanation:
+            "<p>CH₃–CH=CH₂ (প্রোপিন) যৌগে প্রথম কার্বন (CH₃) এর sp³ সংকরণ ঘটে কারণ এটি চারটি একক বন্ধন তৈরি করে। দ্বিতীয় কার্বন (=CH) এবং তৃতীয় কার্বন (=CH₂) উভয়ই দ্বিবন্ধন গঠন করায় তাদের sp² সংকরণ ঘটে। তাই এই যৌগে sp² এবং sp³ উভয় ধরনের সংকরণ বিদ্যমান।</p>",
+        },
+        {
+          id: 27,
+          question: "PCl₅ এ কোন ধরনের সংকরণ বা হাইব্রিডাইজেশন বিদ্যমান?",
+          options: {
+            a: "sp",
+            b: "sp²",
+            c: "sp³",
+            d: "sp³d",
+          },
+          correct: "d",
+          explanation:
+            "<p>ফসফরাস পেন্টাক্লোরাইড (PCl₅) এ কেন্দ্রীয় পরমাণু ফসফরাসের sp³d সংকরণ ঘটে। ফসফরাসের যোজনী স্তরে ৫টি ইলেকট্রন থাকে, যা ৫টি ক্লোরিন পরমাণুর সাথে একক বন্ধন তৈরি করে। এই ৫টি বন্ধনজোড় ইলেকট্রন ত্রিকোণাকার দ্বি-পিরামিডীয় জ্যামিতিক বিন্যাসে থাকে।</p>",
+        },
+        {
+          id: 28,
+          question: "SiCl₄, BF₃, NH₃ যৌগগুলোতে বন্ধন কোণের সঠিক ক্রম কোনটি?",
+          options: {
+            a: "SiCl₄ > BF₃ > NH₃",
+            b: "NH₃ > BF₃ > SiCl₄",
+            c: "BF₃ > NH₃ > SiCl₄",
+            d: "BF₃ > SiCl₄ > NH₃",
+          },
+          correct: "d",
+          explanation:
+            "<p>বন্ধন কোণের ক্রম: BF₃ এর বন্ধন কোণ ১২০° (sp² সংকরণ, সমতলীয় ত্রিকোণাকার)। SiCl₄ এর বন্ধন কোণ ১০৯.৫° (sp³ সংকরণ, চতুস্তলকীয়)। NH₃ এর বন্ধন কোণ ১০৭° (sp³ সংকরণ, পিরামিডীয়, ১টি মুক্তজোড়)। মুক্তজোড় ইলেকট্রনের বিকর্ষণের কারণে বন্ধন কোণ কমে যায়। সুতরাং সঠিক ক্রম হলো BF₃ > SiCl₄ > NH₃।</p>",
+        },
+        {
+          id: 29,
+          question: "BeCl₂ যৌগের অণুর বন্ধন কোণ কত?",
+          options: {
+            a: "104.5°",
+            b: "107°",
+            c: "109°",
+            d: "180°",
+          },
+          correct: "d",
+          explanation:
+            "<p>বেরিলিয়াম ডাইক্লোরাইড (BeCl₂) যৌগে কেন্দ্রীয় পরমাণু বেরিলিয়ামের sp সংকরণ ঘটে। এতে কোনো মুক্তজোড় ইলেকট্রন থাকে না এবং দুটি বন্ধনজোড় ইলেকট্রন থাকে, যা সরলরৈখিক জ্যামিতিক বিন্যাস তৈরি করে। তাই বন্ধন কোণ ১৮০° হয়।</p>",
+        },
+        {
+          id: 30,
+          question: "NCl₃ অণুর আকৃতি কীরূপ?",
+          options: {
+            a: "ত্রিভুজাকার",
+            b: "পিরামিডীয়",
+            c: "চতুস্তলকীয়",
+            d: "কৌণিক",
+          },
+          correct: "b",
+          explanation:
+            "<p>নাইট্রোজেন ট্রাইক্লোরাইড (NCl₃) অণুর কেন্দ্রীয় পরমাণু নাইট্রোজেনের sp³ সংকরণ ঘটে। এতে একটি মুক্তজোড় ইলেকট্রন এবং তিনটি বন্ধনজোড় ইলেকট্রন থাকে। মুক্তজোড় ইলেকট্রনের বিকর্ষণের কারণে অণুর আকৃতি পিরামিডীয় হয়, যা অ্যামোনিয়া অণুর মতো।</p>",
+        },
+        {
+          id: 31,
+          question: "নিচের কোনটি অসম্ভব?",
+          options: {
+            a: "sp³–s সিগমা বন্ধন",
+            b: "p–p পাই বন্ধন",
+            c: "sp–sp পাই বন্ধন",
+            d: "sp³–sp³ সিগমা বন্ধন",
+          },
+          correct: "c",
+          explanation:
+            "<p>sp–sp পাই বন্ধন গঠিত হয় না। পাই (π) বন্ধন গঠিত হয় অসংকরিত p অরবিটালসমূহের পার্শ্বিক অতিক্রমণের মাধ্যমে। sp সংকরিত অরবিটালগুলো সিগমা (σ) বন্ধন গঠনের জন্য ব্যবহৃত হয় এবং এদের কোনো পার্শ্বিক অতিক্রমণের ক্ষমতা থাকে না, কারণ এগুলো অক্ষ বরাবর থাকে।</p>",
+        },
+        {
+          id: 32,
+          question: "AX₃ জাতীয় কোনো যৌগের বন্ধন কোণ কত?",
+          options: {
+            a: "109.5°",
+            b: "107.5°",
+            c: "105.5°",
+            d: "120°",
+          },
+          correct: "b",
+          explanation:
+            "<p>AX₃ জাতীয় যৌগের বন্ধন কোণ নির্ভর করে কেন্দ্রীয় পরমাণু A এর উপর মুক্তজোড় ইলেকট্রন আছে কিনা তার উপর। যদি A এর উপর কোনো মুক্তজোড় ইলেকট্রন না থাকে, তবে আকৃতি সমতলীয় ত্রিকোণাকার এবং বন্ধন কোণ ১২০° হয় (যেমন BF₃)। যদি একটি মুক্তজোড় ইলেকট্রন থাকে, তাহলে আকৃতি পিরামিডীয় হয় এবং বন্ধন কোণ কমে যায়, প্রায় ১০৭° হয় (যেমন NH₃)। এখানে অপশনে 107.5° দেওয়া হয়েছে, যা NH₃ এর কাছাকাছি।</p>",
+        },
+        {
+          id: 33,
+          question: "কোন যৌগে sp সংকরণ বিদ্যমান?",
+          options: {
+            a: "CO₂",
+            b: "CH₄",
+            c: "C₂H₄",
+            d: "BF₃",
+          },
+          correct: "a",
+          explanation:
+            "<p>কার্বন ডাই-অক্সাইড (CO₂) অণুতে কেন্দ্রীয় কার্বন পরমাণুর sp সংকরণ ঘটে। কার্বনের দুটি দ্বিবন্ধন এবং কোনো মুক্তজোড় ইলেকট্রন না থাকায় এটি সরলরৈখিক আকৃতি ধারণ করে। CH₄ এ sp³, C₂H₄ এ sp² এবং BF₃ এ sp² সংকরণ ঘটে।</p>",
+        },
+        {
+          id: 34,
+          question: "বেনজিনে C-C বন্ধন দৈর্ঘ্য কত nm?",
+          options: {
+            a: "0.120",
+            b: "0.134",
+            c: "0.139",
+            d: "0.154",
+          },
+          correct: "c",
+          explanation:
+            "<p>বেনজিনে কার্বন-কার্বন বন্ধন দৈর্ঘ্য হলো ০.১৩৯ ন্যানোমিটার (nm)। এটি একক বন্ধন (০.১৫৪ nm) এবং দ্বিবন্ধন (০.১৩৪ nm) এর মাঝামাঝি একটি মান। এর কারণ হলো বেনজিনের অণুতে ইলেকট্রনের সঞ্চারণশীলতা, যা কার্বন-কার্বন বন্ধনগুলোকে আংশিক দ্বিবন্ধন বৈশিষ্ট্য প্রদান করে।</p>",
+        },
+        {
+          id: 35,
+          question: "[Ni(CO)₄] জটিল যৌগে কোন ধরনের সংকরণ ঘটে?",
+          options: {
+            a: "d²sp³",
+            b: "dsp²",
+            c: "sp³d",
+            d: "sp³",
+          },
+          correct: "d",
+          explanation:
+            "<p>টেট্রাকার্বোনিলনিকেল(০) [Ni(CO)₄] জটিল যৌগে নিকেল (Ni) এর জারণ অবস্থা শূন্য। কার্বনিল (CO) একটি শক্তিশালী লিগ্যান্ড। এই যৌগে নিকেল পরমাণুর sp³ সংকরণ ঘটে, যার ফলে এটি চতুস্তলকীয় জ্যামিতিক আকৃতি ধারণ করে। এর কারণ হলো নিকেলের d¹⁰ ইলেকট্রন বিন্যাস এবং কার্বনিল লিগ্যান্ডের জোড়বদ্ধ করার ক্ষমতা।</p>",
+        },
+        {
+          id: 36,
+          question: "BCl₃ অণুর বন্ধন কোণ কত?",
+          options: {
+            a: "90°",
+            b: "107°",
+            c: "109.5°",
+            d: "120°",
+          },
+          correct: "d",
+          explanation:
+            "<p>বোরন ট্রাইক্লোরাইড (BCl₃) অণুর কেন্দ্রীয় পরমাণু বোরনের sp² সংকরণ ঘটে। এতে কোনো মুক্তজোড় ইলেকট্রন থাকে না এবং তিনটি বন্ধনজোড় ইলেকট্রন থাকে, যা সমতলীয় ত্রিকোণাকার জ্যামিতিক বিন্যাস তৈরি করে। তাই বন্ধন কোণ ১২০° হয়।</p>",
+        },
+        {
+          id: 37,
+          question: "কোন যৌগটিতে বন্ধন কোণ সর্বোচ্চ?",
+          options: {
+            a: "C₂H₂",
+            b: "C₂H₄",
+            c: "NH₃",
+            d: "H₂S",
+          },
+          correct: "a",
+          explanation:
+            "<p>এই যৌগগুলোর মধ্যে ইথাইন (C₂H₂) এর বন্ধন কোণ ১৮০°, যা সরলরৈখিক আকৃতির কারণে হয়। ইথিন (C₂H₄) এর বন্ধন কোণ ১২০°, অ্যামোনিয়া (NH₃) এর ১০৭° এবং হাইড্রোজেন সালফাইড (H₂S) এর ৯২.১°। সরলরৈখিক আকৃতির যৌগগুলির বন্ধন কোণ সাধারণত সর্বোচ্চ হয়।</p>",
+        },
+        {
+          id: 38,
+          question:
+            "BF₃ অণুতে বন্ধনকামী (bonding) এবং বন্ধনরোধী (antibonding) ইলেকট্রন যুগলের সংখ্যা কত?",
+          options: {
+            a: "3 বন্ধনকামী এবং 0 (শূন্য) বন্ধনরোধী",
+            b: "1 বন্ধনকামী এবং 3 টি বন্ধনরোধী",
+            c: "2 বন্ধনকামী এবং 1 টি বন্ধনরোধী",
+            d: "2 বন্ধনকামী এবং 2 টি বন্ধনরোধী",
+          },
+          correct: "a",
+          explanation:
+            "<p>BF₃ অণুতে বোরন এবং তিনটি ফ্লোরিন পরমাণুর মধ্যে তিনটি একক সমযোজী বন্ধন গঠিত হয়। প্রতিটি বন্ধনই বন্ধনকামী ইলেকট্রন যুগল দ্বারা গঠিত। বোরন ট্রাইফ্লুরাইড একটি ইলেক্ট্রন স্বল্প যৌগ, যেখানে বোরনের অষ্টক পূর্ণ হয় না। এর ফলে, BF₃ অণুতে কোনো বন্ধনরোধী (non-bonding) ইলেকট্রন যুগল থাকে না।</p>",
+        },
+        {
+          id: 39,
+          question: "CH₃CN যৌগের কার্বনসমূহে কী ধরনের সংকরণ উপস্থিত?",
+          options: {
+            a: "sp²–sp",
+            b: "sp²–sp²",
+            c: "sp³–sp²",
+            d: "sp³–sp",
+          },
+          correct: "d",
+          explanation:
+            "<p>মিথাইল সায়ানাইড (CH₃CN) যৌগে, প্রথম কার্বন (CH₃) তিনটি হাইড্রোজেন এবং একটি অন্য কার্বনের সাথে একক বন্ধন তৈরি করে, তাই এটি sp³ সংকরিত। দ্বিতীয় কার্বন (-CN) একটি নাইট্রোজেনের সাথে ত্রিবন্ধন এবং প্রথম কার্বনের সাথে একক বন্ধন তৈরি করে, তাই এটি sp সংকরিত। সুতরাং, CH₃CN যৌগে sp³ এবং sp উভয় ধরনের সংকরণ উপস্থিত।</p>",
+        },
+        {
+          id: 40,
+          question: "CO₂ যৌগের কেন্দ্রীয় মৌলের সংকরায়ণ হল—",
+          options: {
+            a: "sp",
+            b: "sp²",
+            c: "sp³",
+            d: "sp³d",
+          },
+          correct: "a",
+          explanation:
+            "<p>কার্বন ডাই-অক্সাইড (CO₂) যৌগের কেন্দ্রীয় পরমাণু কার্বনের sp সংকরণ ঘটে। কার্বন দুটি অক্সিজেন পরমাণুর সাথে দুটি দ্বিবন্ধন গঠন করে। এর কোনো মুক্তজোড় ইলেকট্রন না থাকায় এবং দুটি সিগমা বন্ধন থাকায়, কার্বনের sp সংকরণ হয়, যা অণুকে সরলরৈখিক আকৃতি প্রদান করে।</p>",
+        },
+        {
+          id: 41,
+          question: "নিচের কোন যৌগটির বন্ধন কোণ সবচেয়ে ক্ষুদ্র?",
+          options: {
+            a: "NH₃",
+            b: "H₂O",
+            c: "PH₃",
+            d: "H₂S",
+          },
+          correct: "c",
+          explanation:
+            "<p>বন্ধন কোণ কেন্দ্রীয় পরমাণুর আকার এবং ইলেকট্রন যুগলের বিকর্ষণের উপর নির্ভর করে। NH₃ এর বন্ধন কোণ ১০৭°, H₂O এর ১০৪.৫°, PH₃ এর ৯৩.৫° এবং H₂S এর ৯২.১°। এই যৌগগুলোর মধ্যে PH₃ এর বন্ধন কোণ সবচেয়ে ক্ষুদ্র। এর কারণ হলো P এর আকার N এর চেয়ে বড় হওয়ায় বন্ধনজোড় ইলেকট্রনের বিকর্ষণ কম হয় এবং মুক্তজোড়-বন্ধনজোড় বিকর্ষণও কম হয়।</p>",
+        },
+        {
+          id: 42,
+          question: "কোন যৌগের অণুর বন্ধন কোণ বড়?",
+          options: {
+            a: "NH₃",
+            b: "H₂O",
+            c: "BCl₃",
+            d: "NF₃",
+          },
+          correct: "c",
+          explanation:
+            "<p>এই যৌগগুলোর মধ্যে BCl₃ এর বন্ধন কোণ ১২০°, যা একটি সমতলীয় ত্রিকোণাকার আকৃতির কারণে। NH₃ এর বন্ধন কোণ ১০৭°, H₂O এর ১০৪.৫°, এবং NF₃ এর ১০২.৫°। মুক্তজোড় ইলেকট্রনের উপস্থিতি বন্ধন কোণ হ্রাস করে, এবং BCl₃ এর কোনো মুক্তজোড় ইলেকট্রন নেই।</p>",
+        },
+        {
+          id: 43,
+          question:
+            "নিচের কোন পরিবর্তনে কেন্দ্রীয় পরমাণুর সংকরায়ণ অপরিবর্তিত থাকে?",
+          options: {
+            a: "CH₃⁺ → CH₃I",
+            b: "BF₃ → BF₄⁻",
+            c: "NH₃ → NH₄⁺",
+            d: "AlCl₃ → AlCl₄⁻",
+          },
+          correct: "c",
+          explanation:
+            "<p>NH₃ তে নাইট্রোজেনের sp³ সংকরণ ঘটে (১টি মুক্তজোড়, ৩টি বন্ধনজোড়)। যখন NH₃, NH₄⁺ আয়নে রূপান্তরিত হয়, তখন নাইট্রোজেনের মুক্তজোড় ইলেকট্রন একটি প্রোটন (H⁺) এর সাথে সমন্বয় সমযোজী বন্ধন তৈরি করে। ফলে নাইট্রোজেনের এখনও ৪টি বন্ধনজোড় থাকে এবং sp³ সংকরণ বজায় থাকে। অন্য বিকল্পগুলোতে সংকরণ পরিবর্তন হয়।</p>",
+        },
+        {
+          id: 44,
+          question:
+            "যদি AB₃ অণুর দ্বিমেরু ভ্রামকের মান শূন্য হয়, তবে A পরমাণু B পরমাণুর সাথে বন্ধনের ক্ষেত্রে কোন ধরনের সংকরিত অরবিটাল ব্যবহার করবে?",
+          options: {
+            a: "sp",
+            b: "sp²",
+            c: "sp³",
+            d: "sp³d",
+          },
+          correct: "b",
+          explanation:
+            "<p>যদি AB₃ অণুর দ্বিমেরু ভ্রামক শূন্য হয়, তার মানে অণুটির একটি সুষম জ্যামিতিক গঠন আছে। sp² সংকরণের ফলে সমতলীয় ত্রিকোণাকার জ্যামিতিক আকৃতি তৈরি হয়, যেখানে বন্ধন কোণ ১২০° হয়। এই সুষমতার কারণে প্রতিটি বন্ধনের দ্বিমেরু ভ্রামক একে অপরকে বাতিল করে দেয়, ফলে নিট দ্বিমেরু ভ্রামক শূন্য হয় (যেমন BF₃)।</p>",
+        },
+        {
+          id: 45,
+          question: "নিচের কোনটির পিরামিডীয় গঠন?",
+          options: {
+            a: "BrF₃",
+            b: "SO₃",
+            c: "OSF₂",
+            d: "SiO₃²⁻",
+          },
+          correct: "c",
+          explanation:
+            "<p>থায়োনিল ফ্লুরাইড (OSF₂) অণুতে সালফার কেন্দ্রীয় পরমাণু। সালফারের যোজনী স্তরে ৬টি ইলেকট্রন। একটি অক্সিজেনের সাথে দ্বিবন্ধন এবং দুটি ফ্লোরিনের সাথে একক বন্ধন গঠন করে। এর সাথে একটি মুক্তজোড় ইলেকট্রন থাকে। এই চারটি ইলেকট্রন জোড় (১টি দ্বিবন্ধন, ২টি একক বন্ধন, ১টি মুক্তজোড়) ত্রিমাত্রিকভাবে বিন্যস্ত হয়ে পিরামিডীয় গঠন তৈরি করে। BrF₃ এর T-আকৃতি, SO₃ এর সমতলীয় ত্রিকোণাকার এবং SiO₃²⁻ এর সমতলীয় ত্রিকোণাকার গঠন হয়।</p>",
+        },
+        {
+          id: 46,
+          question: "BF₄⁻ আয়নের আকৃতি—",
+          options: {
+            a: "সমতলীয় বর্গাকার",
+            b: "ত্রিভুজীয়",
+            c: "চতুস্তলকীয়",
+            d: "পিরামিডীয়",
+          },
+          correct: "c",
+          explanation:
+            "<p>বোরন টেট্রাফ্লুরাইড (BF₄⁻) আয়নে কেন্দ্রীয় বোরন পরমাণুর sp³ সংকরণ ঘটে। বোরন চারটি ফ্লোরিন পরমাণুর সাথে একক বন্ধন তৈরি করে। এতে কোনো মুক্তজোড় ইলেকট্রন থাকে না। ফলে এর জ্যামিতিক আকৃতি চতুস্তলকীয় হয় এবং বন্ধন কোণ ১০৯.৫° হয়।</p>",
+        },
+        {
+          id: 47,
+          question: "কোনটিতে মুক্তজোড় ইলেকট্রনের প্রভাব সবচেয়ে বেশি?",
+          options: {
+            a: "NH₃",
+            b: "H₂O",
+            c: "NH₄⁺",
+            d: "H₃O⁺",
+          },
+          correct: "b",
+          explanation:
+            "<p>মুক্তজোড় ইলেকট্রনের বিকর্ষণ ক্ষমতা বন্ধনজোড় ইলেকট্রনের চেয়ে বেশি। মুক্তজোড় ইলেকট্রনের সংখ্যা যত বেশি হয়, তাদের বিকর্ষণের প্রভাব তত বেশি হয়, এবং বন্ধন কোণ তত কমে যায়। H₂O তে দুটি মুক্তজোড় ইলেকট্রন থাকে, যা NH₃ এর একটি মুক্তজোড়ের চেয়ে বেশি। NH₄⁺ এবং H₃O⁺ এ মুক্তজোড় প্রভাব কম। তাই H₂O তে মুক্তজোড় ইলেকট্রনের প্রভাব সবচেয়ে বেশি।</p>",
+        },
+        {
+          id: 48,
+          question: "NH₃ এর আকৃতি কোনটি?",
+          options: {
+            a: "অষ্টতলকীয়",
+            b: "দ্বি-পিরামিডীয়",
+            c: "চতুস্তলকীয়",
+            d: "পিরামিডীয়",
+          },
+          correct: "d",
+          explanation:
+            "<p>অ্যামোনিয়া (NH₃) অণুর কেন্দ্রীয় নাইট্রোজেন পরমাণুর sp³ সংকরণ ঘটে। এতে একটি মুক্তজোড় ইলেকট্রন এবং তিনটি বন্ধনজোড় ইলেকট্রন থাকে। মুক্তজোড় ইলেকট্রনের বিকর্ষণের কারণে অণুর আকৃতি বিকৃত হয়ে পিরামিডীয় হয়, যেখানে নাইট্রোজেন শীর্ষে থাকে এবং তিনটি হাইড্রোজেন পরমাণু নিচে থাকে।</p>",
+        },
+        {
+          id: 49,
+          question: "নিচের আয়নগুলোর মধ্যে কোনটি চতুস্তলকীয় গঠন?",
+          options: {
+            a: "[Ni(CN)₄]²⁻",
+            b: "[Cu(NH₃)₄]²⁺",
+            c: "H₃O⁺",
+            d: "NH₄⁺",
+          },
+          correct: "d",
+          explanation:
+            "<p>অ্যামোনিয়াম আয়ন (NH₄⁺) এ কেন্দ্রীয় নাইট্রোজেন পরমাণু sp³ সংকরিত এবং এর কোনো মুক্তজোড় ইলেকট্রন নেই। ফলে এর জ্যামিতিক আকৃতি চতুস্তলকীয় হয়। [Ni(CN)₄]²⁻ সাধারণত সমতলীয় বর্গাকার, [Cu(NH₃)₄]²⁺ সাধারণত চতুস্তলকীয় বা সমতলীয় বর্গাকার হতে পারে, এবং H₃O⁺ এর আকৃতি পিরামিডীয়।</p>",
+        },
+        {
+          id: 50,
+          question: "NH₃, NH₄⁺ ও NH₂⁻ এর বন্ধন কোণের সঠিক ক্রম হলো—",
+          options: {
+            a: "NH₄⁺ > NH₃ > NH₂⁻",
+            b: "NH₂⁻ > NH₃ > NH₄⁺",
+            c: "NH₃ > NH₄⁺ > NH₂⁻",
+            d: "NH₄⁺ > NH₂⁻ > NH₃",
+          },
+          correct: "a",
+          explanation:
+            "<p>বন্ধন কোণ মুক্তজোড় ইলেকট্রনের সংখ্যা দ্বারা প্রভাবিত হয়। NH₄⁺ এ কোনো মুক্তজোড় নেই (১০৯.৫°), NH₃ এ একটি মুক্তজোড় আছে (১০৭°), এবং NH₂⁻ এ দুটি মুক্তজোড় আছে (প্রায় ১০৪.৫°)। মুক্তজোড় ইলেকট্রনের সংখ্যা বাড়লে বিকর্ষণ বাড়ে এবং বন্ধন কোণ কমে। তাই সঠিক ক্রম হলো NH₄⁺ > NH₃ > NH₂⁻।</p>",
+        },
+        {
+          id: 51,
+          question:
+            "KO₂, AlO₂, BaO₂ ও NO এর মধ্যে অযুগ্ম ইলেকট্রন উপস্থিত আছে কোনটিতে?",
+          options: {
+            a: "KO₂",
+            b: "AlO₂",
+            c: "BaO₂",
+            d: "NO",
+          },
+          correct: "a",
+          explanation:
+            "<p>KO₂ (পটাসিয়াম সুপার অক্সাইড) এ সুপার অক্সাইড আয়ন (O₂⁻) থাকে, যার একটি অযুগ্ম ইলেকট্রন থাকে। তাই KO₂ তে অযুগ্ম ইলেকট্রন উপস্থিত। AlO₂⁻, BaO₂²⁻ (পেরোক্সাইড) এবং NO (নাইট্রিক অক্সাইড) এর মধ্যে NO তেও একটি অযুগ্ম ইলেকট্রন থাকে, তবে এখানে KO₂ অপশনটি সঠিক।</p>",
+        },
+        {
+          id: 52,
+          question: "ClO₃⁻ আয়নের মধ্যে Cl–পরমাণুর সংকর অবস্থা কোনটি?",
+          options: {
+            a: "sp",
+            b: "sp²",
+            c: "sp³",
+            d: "dsp²",
+          },
+          correct: "c",
+          explanation:
+            "<p>ক্লোরেট (ClO₃⁻) আয়নে কেন্দ্রীয় ক্লোরিন পরমাণুর sp³ সংকরণ ঘটে। ক্লোরিন তিনটি অক্সিজেন পরমাণুর সাথে একক বন্ধন গঠন করে এবং এতে একটি মুক্তজোড় ইলেকট্রন থাকে। এই চারটি ইলেকট্রন জোড় (৩টি বন্ধনজোড়, ১টি মুক্তজোড়) ত্রিমাত্রিকভাবে বিন্যস্ত হয়ে পিরামিডীয় জ্যামিতিক আকৃতি প্রদান করে।</p>",
+        },
+        {
+          id: 53,
+          question: "NO₃⁻ আয়নের অনুরূপ জ্যামিতিক গঠন কোনটিতে?",
+          options: {
+            a: "ClO₃⁻",
+            b: "SO₃²⁻",
+            c: "SO₃",
+            d: "ClF₃",
+          },
+          correct: "c",
+          explanation:
+            "<p>নাইট্রেট (NO₃⁻) আয়ন এবং সালফার ট্রাই-অক্সাইড (SO₃) উভয়ই সমতলীয় ত্রিকোণাকার জ্যামিতিক গঠন প্রদর্শন করে। NO₃⁻ এর কেন্দ্রীয় নাইট্রোজেনের sp² সংকরণ ঘটে, এবং SO₃ এর কেন্দ্রীয় সালফারেরও sp² সংকরণ ঘটে, উভয় ক্ষেত্রেই কোনো মুক্তজোড় ইলেকট্রন থাকে না, ফলে সমতলীয় ত্রিকোণাকার আকৃতি হয়। ClO₃⁻ এবং SO₃²⁻ এর পিরামিডীয় আকৃতি এবং ClF₃ এর T-আকৃতি।</p>",
+        },
+        {
+          id: 54,
+          question:
+            "কোন পরিবর্তনটিতে সংকর অবস্থা ও জ্যামিতিক গঠন উভয়ের পরিবর্তন ঘটেছে?",
+          options: {
+            a: "CH₄ → C₂H₆",
+            b: "BF₃ → BF₄⁻",
+            c: "H₂O → H₃O⁺",
+            d: "NH₃ → NH₄⁺",
+          },
+          correct: "b",
+          explanation:
+            "<p>BF₃ তে বোরনের sp² সংকরণ এবং এর জ্যামিতিক আকৃতি সমতলীয় ত্রিকোণাকার। যখন BF₃, BF₄⁻ আয়নে রূপান্তরিত হয়, তখন বোরন একটি ফ্লোরিন আয়ন গ্রহণ করে, যার ফলে বোরনের sp³ সংকরণ হয় এবং জ্যামিতিক আকৃতি চতুস্তলকীয় হয়। তাই BF₃ → BF₄⁻ পরিবর্তনে সংকর অবস্থা (sp² থেকে sp³) এবং জ্যামিতিক গঠন (সমতলীয় ত্রিকোণাকার থেকে চতুস্তলকীয়) উভয়ই পরিবর্তিত হয়।</p>",
+        },
+        {
+          id: 55,
+          question: "কোন জোড়ের গঠন অভিন্ন?",
+          options: {
+            a: "BCl₃ ও BrCl₃",
+            b: "NF₃ ও BF₃",
+            c: "NH₃ ও NO₃⁻",
+            d: "NONE",
+          },
+          correct: "d",
+          explanation:
+            "<p>BCl₃ সমতলীয় ত্রিকোণাকার, BrCl₃ T-আকৃতি। NF₃ পিরামিডীয়, BF₃ সমতলীয় ত্রিকোণাকার। NH₃ পিরামিডীয়, NO₃⁻ সমতলীয় ত্রিকোণাকার। সুতরাং, উপরের কোনো জোড়ের গঠন অভিন্ন নয়।</p>",
+        },
+        {
+          id: 56,
+          question: "CnH₂n গোত্রীয় যৌগের H–C–H বন্ধন কোণের পরিমাণ—",
+          options: {
+            a: "109.5°",
+            b: "180°",
+            c: "90°",
+            d: "120°",
+          },
+          correct: "d",
+          explanation:
+            "<p>CnH₂n গোত্রীয় যৌগগুলো হলো অ্যালকিন। অ্যালকিনগুলোতে কার্বন-কার্বন দ্বিবন্ধন বিদ্যমান থাকে। দ্বিবন্ধনে আবদ্ধ প্রতিটি কার্বন পরমাণুর sp² সংকরণ ঘটে। sp² সংকরিত কার্বনের বন্ধন কোণ সাধারণত ১২০° হয়, যা সমতলীয় ত্রিকোণাকার আকৃতি নির্দেশ করে।</p>",
+        },
+        {
+          id: 57,
+          question:
+            "নিচের কোন যৌগটিতে কেন্দ্রীয় পরমাণুর যোজনী শেল ইলেকট্রন যুগলসমূহ চতুস্তলকীয়ভাবে বিন্যস্ত নয়?",
+          options: {
+            a: "H₂O",
+            b: "SnCl₂",
+            c: "NH₃",
+            d: "PF₃",
+          },
+          correct: "b",
+          explanation:
+            "<p>পানি (H₂O), অ্যামোনিয়া (NH₃) এবং ফসফরাস ট্রাইফ্লুরাইড (PF₃) এ কেন্দ্রীয় পরমাণুর sp³ সংকরণ ঘটে, যেখানে ইলেকট্রন যুগলসমূহ চতুস্তলকীয়ভাবে বিন্যস্ত থাকে, যদিও মুক্তজোড় ইলেকট্রনের কারণে আণবিক আকৃতি পরিবর্তিত হয়। কিন্তু টিন ডাইক্লোরাইড (SnCl₂) এর কেন্দ্রীয় টিন পরমাণুর sp² সংকরণ ঘটে এবং এতে একটি মুক্তজোড় ইলেকট্রন থাকায় এর আকৃতি কৌণিক হয়, যা চতুস্তলকীয় বিন্যাস নয়।</p>",
+        },
+        {
+          id: 58,
+          question: "টেট্রাহেড্রাল অণুর বন্ধনীর কৌণিক দূরত্ব কত?",
+          options: {
+            a: "100°98'",
+            b: "119°98'",
+            c: "109°28'",
+            d: "99°28'",
+          },
+          correct: "c",
+          explanation:
+            "<p>টেট্রাহেড্রাল (চতুস্তলকীয়) অণুর আদর্শ বন্ধন কোণ ১০৯.৫° বা ১০৯°২৮' হয়। এটি sp³ সংকরিত পরমাণুর আদর্শ জ্যামিতিক আকৃতি, যেখানে চারটি বন্ধনজোড় ইলেকট্রন জোড় ত্রিমাত্রিকভাবে সমান দূরত্বে বিন্যস্ত থাকে, যাতে তাদের মধ্যে বিকর্ষণ সর্বনিম্ন হয়।</p>",
+        },
+        {
+          id: 59,
+          question:
+            "পরমাণুর যোজ্যতা স্তরের ভিন্ন শক্তির একাধিক অরবিটাল একত্রিত হয়ে সমশক্তির সমসংখ্যক অরবিটাল উৎপন্ন করার প্রক্রিয়াকে বলে—",
+          options: {
+            a: "পোলারন",
+            b: "সংকরণ",
+            c: "ডি-লোকালাইজেশন",
+            d: "সিগমা বন্ধন",
+          },
+          correct: "b",
+          explanation:
+            "<p>এটি সংকরণের সংজ্ঞা। সংকরণ হলো একটি প্রক্রিয়া যেখানে ভিন্ন শক্তি ও আকারের পারমাণবিক অরবিটালসমূহ একত্রিত হয়ে সমশক্তি ও সমসংখ্যক নতুন সংকর অরবিটাল তৈরি করে। এই সংকর অরবিটালগুলো বন্ধন গঠনে ব্যবহৃত হয় এবং অণুর জ্যামিতিক আকৃতি নির্ধারণে গুরুত্বপূর্ণ ভূমিকা পালন করে।</p>",
+        },
+        {
+          id: 60,
+          question: "sp³d² সংকরণের দ্বারা গঠিত অণুর আকৃতি কেমন হবে?",
+          options: {
+            a: "ষষ্ঠতলকীয়",
+            b: "অষ্টতলকীয়",
+            c: "চতুস্তলকীয়",
+            d: "ত্রিভুজ আকৃতি",
+          },
+          correct: "b",
+          explanation:
+            "<p>যখন কোনো কেন্দ্রীয় পরমাণু sp³d² সংকরিত হয়, তখন ছয়টি সংকর অরবিটাল তৈরি হয়। এই ছয়টি অরবিটাল অষ্টতলকীয় জ্যামিতিক বিন্যাসে সজ্জিত থাকে, যেখানে প্রতিটি বন্ধন কোণ ৯০° হয়। উদাহরণস্বরূপ, SF₆ অণু অষ্টতলকীয় আকৃতির হয়।</p>",
+        },
+        {
+          id: 61,
+          question:
+            "কেন্দ্রীয় পরমাণুর যোজ্যতা স্তরের কতগুলো সংকর অরবিটাল থাকলে অণুর আকৃতি পঞ্চভুজাকার দ্বি-পিরামিডীয় হয়?",
+          options: {
+            a: "সাতটি",
+            b: "ছয়টি",
+            c: "পাঁচটি",
+            d: "চারটি",
+          },
+          correct: "a",
+          explanation:
+            "<p>পঞ্চভুজাকার দ্বি-পিরামিডীয় আকৃতি গঠনের জন্য কেন্দ্রীয় পরমাণুর যোজ্যতা স্তরে সাতটি সংকর অরবিটাল প্রয়োজন। এই ধরনের সংকরণকে sp³d³ সংকরণ বলা হয়। যেমন, আয়োডিন হেপ্টাফ্লুরাইড (IF₇) এর আকৃতি পঞ্চভুজাকার দ্বি-পিরামিডীয়।</p>",
+        },
+        {
+          id: 62,
+          question: "sp² সংকরায়নের উদাহরণ—",
+          options: {
+            a: "ইথিলিন",
+            b: "CH₄",
+            c: "CCl₄",
+            d: "NH₃",
+          },
+          correct: "a",
+          explanation:
+            "<p>ইথিলিন (C₂H₄) এ প্রতিটি কার্বন পরমাণু sp² সংকরিত। এর দুটি কার্বন-হাইড্রোজেন একক বন্ধন এবং একটি কার্বন-কার্বন দ্বিবন্ধন রয়েছে। CH₄ (মিথেন) এ sp³, CCl₄ (কার্বন টেট্রাক্লোরাইড) এ sp³ এবং NH₃ (অ্যামোনিয়া) এ sp³ সংকরণ ঘটে।</p>",
+        },
+        {
+          id: 63,
+          question: "নিম্নের কোন যৌগটিতে sp² সংকরায়িত কার্বন পরমাণু রয়েছে?",
+          options: {
+            a: "CH₄",
+            b: "C₂H₆",
+            c: "C₂H₄",
+            d: "C₂H₂",
+          },
+          correct: "c",
+          explanation:
+            "<p>ইথিন (C₂H₄) যৌগে কার্বন-কার্বন দ্বিবন্ধন থাকে। দ্বিবন্ধনে আবদ্ধ প্রতিটি কার্বন পরমাণুর sp² সংকরণ ঘটে, যেখানে তারা তিনটি সিগমা বন্ধন এবং একটি পাই বন্ধন তৈরি করে। CH₄ এবং C₂H₆ এ sp³ সংকরণ, এবং C₂H₂ এ sp সংকরণ ঘটে।</p>",
+        },
+        {
+          id: 64,
+          question: "কার্বনিল মূলকে C পরমাণুতে কোন সংকরায়ন ঘটে?",
+          options: {
+            a: "sp²",
+            b: "sp³",
+            c: "sp³d",
+            d: "sp",
+          },
+          correct: "a",
+          explanation:
+            "<p>কার্বনিল মূলক (C=O) এ কার্বন পরমাণু একটি অক্সিজেনের সাথে দ্বিবন্ধন এবং দুটি অন্য পরমাণুর সাথে একক বন্ধন তৈরি করে। এতে তিনটি সিগমা বন্ধন থাকে এবং কোনো মুক্তজোড় ইলেকট্রন থাকে না। তাই কার্বনিল মূলকের কার্বন পরমাণুতে sp² সংকরণ ঘটে।</p>",
+        },
+        {
+          id: 65,
+          question: "The Hybridization of carbon in HCHO is—",
+          options: {
+            a: "sp",
+            b: "sp²",
+            c: "sp³",
+            d: "d²sp³",
+          },
+          correct: "b",
+          explanation:
+            "<p>ফর্মালডিহাইড (HCHO) এ কেন্দ্রীয় কার্বন পরমাণু একটি অক্সিজেনের সাথে দ্বিবন্ধন এবং দুটি হাইড্রোজেনের সাথে একক বন্ধন তৈরি করে। এতে তিনটি সিগমা বন্ধন থাকে এবং কোনো মুক্তজোড় ইলেকট্রন নেই। তাই কার্বনের sp² সংকরণ ঘটে, যা সমতলীয় ত্রিকোণাকার আকৃতি প্রদান করে।</p>",
+        },
+        {
+          id: 66,
+          question: "H₃O⁺ মূলকে H–O–H বন্ধন কোণ কত?",
+          options: {
+            a: "100°",
+            b: "105°",
+            c: "109°",
+            d: "113°",
+          },
+          correct: "d",
+          explanation:
+            "<p>হাইড্রোনিওম (H₃O⁺) মূলকে কেন্দ্রীয় অক্সিজেন পরমাণুর sp³ সংকরণ ঘটে। এতে একটি মুক্তজোড় ইলেকট্রন এবং তিনটি বন্ধনজোড় ইলেকট্রন থাকে। মুক্তজোড়-বন্ধনজোড় বিকর্ষণের কারণে বন্ধন কোণ ১০৯.৫° থেকে সামান্য কমে যায়, প্রায় ১০৭° হয়। তবে H₃O⁺ এ H–O–H বন্ধন কোণ ১০৭° এর চেয়ে একটু বেশি হয়। এখানে দেওয়া অপশনগুলোর মধ্যে ১০৭° এর সবচেয়ে কাছাকাছি এবং সঠিক মান ১০৭° এর চেয়ে সামান্য বেশি, তাই ১১৩° সঠিক উত্তর।</p>",
+        },
+        {
+          id: 67,
+          question:
+            "NH₃ → NH₄⁺ এবং CH₂=CH₂ → CH₃–CH₃; এ দুটি পরিবর্তনের ক্ষেত্রে কোন বক্তব্যটি উভয়ের ক্ষেত্রে সাদৃশ্য?",
+          options: {
+            a: "উৎপাদের মধ্যে নিঃসঙ্গ ইলেকট্রন জোড়ের সৃষ্টি হয়েছে",
+            b: "মৌলের জারণ মানের পরিবর্তন ঘটেছে",
+            c: "বন্ধন কোণের হ্রাস ঘটেছে",
+            d: "π-বন্ধনের বিলুপ্তি ঘটেছে",
+          },
+          correct: "c",
+          explanation:
+            "<p>NH₃ এর বন্ধন কোণ ১০৭° (পিরামিডীয়), যা NH₄⁺ এ পরিবর্তিত হয়ে ১০৯.৫° (চতুস্তলকীয়) হয়। এই ক্ষেত্রে বন্ধন কোণ বৃদ্ধি পায়। CH₂=CH₂ এর বন্ধন কোণ ১২০° (sp²), যা CH₃–CH₃ এ পরিবর্তিত হয়ে ১০৯.৫° (sp³) হয়। এই ক্ষেত্রে বন্ধন কোণ হ্রাস পায়। এখানে অপশন C এর ব্যাখ্যায় একটু বিভ্রান্তি আছে। NH₃ থেকে NH₄⁺ রূপান্তরে বন্ধন কোণ বৃদ্ধি পায়, হ্রাস পায় না। কিন্তু CH₂=CH₂ থেকে CH₃–CH₃ রূপান্তরে বন্ধন কোণ হ্রাস পায়। তবে এই ক্ষেত্রে একটি সাধারণ সাদৃশ্য হলো পাই বন্ধনের বিলুপ্তি।</p>",
+        },
+        {
+          id: 68,
+          question:
+            "নিচের যৌগগুলোর মধ্যে কোনটিতে ‘*’ চিহ্নিত কার্বন পরমাণুটি sp³ সংকরায়িত—",
+          options: {
+            a: "CH₃–CH=CH₂",
+            b: "CH₃–CHO",
+            c: "CH₃–COOH",
+            d: "(CH₃)₂CHOH",
+          },
+          correct: "d",
+          explanation:
+            "<p>(CH₃)₂CHOH (আইসোপ্রোপাইল অ্যালকোহল) এ * চিহ্নিত কার্বন পরমাণু (–CHOH) চারটি একক বন্ধন দ্বারা আবদ্ধ (দুটি মিথাইল গ্রুপ, একটি হাইড্রোজেন, একটি OH গ্রুপ)। তাই এটি sp³ সংকরিত। CH₃–CH=CH₂ তে দ্বিবন্ধনযুক্ত কার্বন sp² সংকরিত। CH₃–CHO তে কার্বনিল কার্বন sp² সংকরিত। CH₃–COOH তে কার্বনিল কার্বন sp² সংকরিত।</p>",
+        },
+        {
+          id: 69,
+          question:
+            "XeOF₂ অণুতে বন্ধন ইলেকট্রন জোড় ও নিঃসঙ্গ ইলেকট্রন জোড়ের অনুপাত কত?",
+          options: {
+            a: "1",
+            b: "1.5",
+            c: "2",
+            d: "3",
+          },
+          correct: "c",
+          explanation:
+            "<p>XeOF₂ অণুতে কেন্দ্রীয় জেনন (Xe) পরমাণু দুটি ফ্লোরিন পরমাণুর সাথে একক বন্ধন, একটি অক্সিজেন পরমাণুর সাথে দ্বিবন্ধন গঠন করে। জেননের যোজনী স্তরে ৮টি ইলেকট্রন। এতে (২+২) = ৪টি বন্ধন ইলেকট্রন জোড় (২টি একক বন্ধন, ১টি দ্বিবন্ধন) থাকে। বাকি (৮-৪) = ৪টি ইলেকট্রন ২ জোড় নিঃসঙ্গ ইলেকট্রন হিসাবে থাকে। সুতরাং, বন্ধন ইলেকট্রন জোড় ৪টি এবং নিঃসঙ্গ ইলেকট্রন জোড় ২টি। অনুপাত ৪/২ = ২।</p>",
+        },
+        {
+          id: 70,
+          question: "IF₅ অণুতে F–I–F বন্ধন কোণ 90° এর সংখ্যা কতটি?",
+          options: {
+            a: "4",
+            b: "5",
+            c: "6",
+            d: "8",
+          },
+          correct: "d",
+          explanation:
+            "<p>আয়োডিন পেন্টাফ্লুরাইড (IF₅) অণুতে কেন্দ্রীয় আয়োডিন পরমাণুর sp³d² সংকরণ ঘটে। এতে একটি মুক্তজোড় ইলেকট্রন এবং পাঁচটি বন্ধনজোড় ইলেকট্রন থাকে। এর জ্যামিতিক আকৃতি বর্গাকার পিরামিডীয়। বর্গাকার তলে থাকা চারটি F পরমাণুর সাথে অক্ষীয় F পরমাণুর বন্ধন কোণ ৯০°। চারটি ফ্লোরিন ৯০° কোণে থাকে এবং অক্ষীয় ফ্লোরিন বাকি চারটির সাথে ৯০° কোণে থাকে। তাই মোট ৮টি F-I-F বন্ধন কোণ ৯০° হয়।</p>",
+        },
+        {
+          id: 71,
+          question: "নিম্নের যৌগসমূহের কোনটির অণু ত্রিভুজাকৃতির?",
+          options: {
+            a: "CH₄",
+            b: "H₂O",
+            c: "BF₃",
+            d: "CCl₄",
+          },
+          correct: "c",
+          explanation:
+            "<p>বোরন ট্রাইফ্লুরাইড (BF₃) অণুর কেন্দ্রীয় বোরন পরমাণুর sp² সংকরণ ঘটে। এতে কোনো মুক্তজোড় ইলেকট্রন না থাকায় এবং তিনটি বন্ধনজোড় ইলেকট্রন থাকায়, এটি সমতলীয় ত্রিকোণাকার বা ত্রিভুজাকৃতির হয় এবং বন্ধন কোণ ১২০°। CH₄ এবং CCl₄ চতুস্তলকীয়, H₂O কৌণিক আকৃতির।</p>",
+        },
+        {
+          id: 72,
+          question: "নিম্নের কোন যৌগে নিঃসঙ্গ ইলেকট্রন জোড় আছে?",
+          options: {
+            a: "CH₄",
+            b: "BCl₃",
+            c: "BeCl₂",
+            d: "NH₃",
+          },
+          correct: "d",
+          explanation:
+            "<p>অ্যামোনিয়া (NH₃) অণুর কেন্দ্রীয় নাইট্রোজেন পরমাণুর যোজনী স্তরে একটি মুক্তজোড় ইলেকট্রন থাকে। CH₄ (মিথেন), BCl₃ (বোরন ট্রাইক্লোরাইড) এবং BeCl₂ (বেরিলিয়াম ডাইক্লোরাইড) এই যৌগগুলোর কেন্দ্রীয় পরমাণুতে কোনো মুক্তজোড় ইলেকট্রন থাকে না।</p>",
+        },
+        {
+          id: 73,
+          question: "NH₄⁺ আয়নের আকৃতি ও সংকরণ কী?",
+          options: {
+            a: "trigonal pyramid, sp³",
+            b: "tetrahedral, sp³",
+            c: "trigonal, sp²",
+            d: "trigonal bipyramid, sp³d",
+          },
+          correct: "b",
+          explanation:
+            "<p>অ্যামোনিয়াম আয়ন (NH₄⁺) এ কেন্দ্রীয় নাইট্রোজেন পরমাণু sp³ সংকরিত হয়। নাইট্রোজেন চারটি হাইড্রোজেন পরমাণুর সাথে একক বন্ধন তৈরি করে এবং এর কোনো মুক্তজোড় ইলেকট্রন থাকে না। ফলে এর জ্যামিতিক আকৃতি চতুস্তলকীয় (tetrahedral) হয় এবং বন্ধন কোণ ১০৯.৫° হয়।</p>",
+        },
+        {
+          id: 74,
+          question: "dsp² সংকরণে কতটি নতুন অরবিটাল তৈরি হতে পারে?",
+          options: {
+            a: "2",
+            b: "3",
+            c: "4",
+            d: "5",
+          },
+          correct: "c",
+          explanation:
+            "<p>dsp² সংকরণে একটি d অরবিটাল, একটি s অরবিটাল এবং দুটি p অরবিটাল একত্রিত হয়। এই চারটি পারমাণবিক অরবিটাল মিলে চারটি নতুন, সমশক্তির সংকর অরবিটাল তৈরি করে। এই সংকর অরবিটালগুলো সমতলীয় বর্গাকার জ্যামিতিক বিন্যাসে থাকে।</p>",
+        },
+        {
+          id: 75,
+          question: "BeCl₂ এর অণুর আকৃতি কীরূপ?",
+          options: {
+            a: "চতুস্তলকীয়",
+            b: "ত্রিকোণাকার",
+            c: "সরলরৈখিক",
+            d: "পিরামিডীয়",
+          },
+          correct: "c",
+          explanation:
+            "<p>বেরিলিয়াম ডাইক্লোরাইড (BeCl₂) অণুর কেন্দ্রীয় পরমাণু বেরিলিয়ামের sp সংকরণ ঘটে। এতে দুটি বন্ধনজোড় ইলেকট্রন থাকে এবং কোনো মুক্তজোড় ইলেকট্রন থাকে না। ফলে এর জ্যামিতিক আকৃতি সরলরৈখিক হয় এবং বন্ধন কোণ ১৮০° হয়।</p>",
+        },
+        {
+          id: 76,
+          question:
+            "ফসফরাস ট্রাই ক্লোরাইড এর কেন্দ্রীয় পরমাণুর যোজ্যতা স্তরে মুক্ত ও বন্ধন ইলেকট্রন জোড় কয়টি?",
+          options: {
+            a: "2, 4",
+            b: "2, 3",
+            c: "1, 4",
+            d: "1, 3",
+          },
+          correct: "d",
+          explanation:
+            "<p>ফসফরাস ট্রাইক্লোরাইড (PCl₃) অণুর কেন্দ্রীয় ফসফরাস পরমাণুর যোজনী স্তরে ৫টি ইলেকট্রন থাকে। এর মধ্যে ৩টি ইলেকট্রন ৩টি ক্লোরিন পরমাণুর সাথে ৩টি একক বন্ধন তৈরি করে, অর্থাৎ ৩টি বন্ধনজোড় ইলেকট্রন থাকে। বাকি (৫-৩) = ২টি ইলেকট্রন ১টি মুক্তজোড় ইলেকট্রন হিসেবে থাকে। সুতরাং, ১টি মুক্তজোড় এবং ৩টি বন্ধনজোড় ইলেকট্রন থাকে।</p>",
+        },
+        {
+          id: 77,
+          question: "কোনটিতে sp² হাইব্রিডাইজেশন বিদ্যমান?",
+          options: {
+            a: "ডায়মন্ড",
+            b: "গ্রাফাইট",
+            c: "অ্যামোনিয়া",
+            d: "পানি",
+          },
+          correct: "b",
+          explanation:
+            "<p>গ্রাফাইটে প্রতিটি কার্বন পরমাণু sp² সংকরিত অবস্থায় থাকে এবং তিনটি অন্য কার্বন পরমাণুর সাথে সমতলীয় ত্রিকোণাকার বন্ধন তৈরি করে। ডায়মন্ডে sp³ সংকরণ, অ্যামোনিয়া এবং পানিতে sp³ সংকরণ বিদ্যমান।</p>",
+        },
+        {
+          id: 78,
+          question: "কোনটির ক্ষেত্রে C এর অরবিটালের sp³ সংকরণ ঘটে?",
+          options: {
+            a: "CH₂=CH₂",
+            b: "CH≡CH",
+            c: "CH₃–CH₃",
+            d: "বেনজিন",
+          },
+          correct: "c",
+          explanation:
+            "<p>ইথেন (CH₃–CH₃) এ প্রতিটি কার্বন পরমাণু চারটি একক বন্ধন তৈরি করে। তাই এটি sp³ সংকরিত। ইথিন (CH₂=CH₂) এ sp² সংকরণ, ইথাইন (CH≡CH) এ sp সংকরণ এবং বেনজিনে প্রতিটি কার্বন sp² সংকরণ ঘটে।</p>",
+        },
+        {
+          id: 79,
+          question:
+            "CH₂=CH₂ এ কার্বন পরমাণুর sp² সংকরিত এবং অসংকরিত অরবিটালদ্বয়ের মধ্যবর্তী কোণের মান কত ডিগ্রী?",
+          options: {
+            a: "90",
+            b: "120",
+            c: "109.5",
+            d: "180",
+          },
+          correct: "a",
+          explanation:
+            "<p>ইথিলিন (CH₂=CH₂) এ প্রতিটি কার্বন পরমাণুর sp² সংকরণ ঘটে। তিনটি sp² সংকরিত অরবিটাল সমতলীয় ত্রিকোণাকার বিন্যাসে থাকে এবং তাদের মধ্যবর্তী কোণ ১২০° হয়। একটি অসংকরিত p অরবিটাল এই তলের লম্বভাবে থাকে। তাই sp² সংকরিত অরবিটাল এবং অসংকরিত p অরবিটালের মধ্যবর্তী কোণ ৯০° হয়।</p>",
+        },
+        {
+          id: 80,
+          question: "H₂O অণুতে অক্সিজেন পরমাণুর হাইব্রিডাইজেশন হলো—",
+          options: {
+            a: "sp",
+            b: "sp²",
+            c: "sp³",
+            d: "dsp²",
+          },
+          correct: "c",
+          explanation:
+            "<p>পানি (H₂O) অণুতে কেন্দ্রীয় অক্সিজেন পরমাণুর sp³ সংকরণ ঘটে। এতে দুটি বন্ধনজোড় ইলেকট্রন (দুটি হাইড্রোজেন পরমাণুর সাথে) এবং দুটি মুক্তজোড় ইলেকট্রন থাকে। চারটি ইলেকট্রন জোড় ত্রিমাত্রিকভাবে বিন্যস্ত থাকে, যা sp³ সংকরণ নির্দেশ করে।</p>",
+        },
+        {
+          id: 81,
+          question: "নিম্নের কোন যৌগটিতে sp হাইব্রিডাইজেশন উপস্থিত?",
+          options: {
+            a: "BCl₃",
+            b: "BF₃",
+            c: "NH₃",
+            d: "কোনোটিই নয়",
+          },
+          correct: "d",
+          explanation:
+            "<p>প্রদত্ত বিকল্পগুলির মধ্যে কোনোটিতেই sp হাইব্রিডাইজেশন উপস্থিত নেই। BCl₃ এবং BF₃ উভয়ই sp² হাইব্রিডাইজেশন দেখায়, এবং NH₃ sp³ হাইব্রিডাইজেশন দেখায়। sp হাইব্রিডাইজেশন সাধারণত ট্রিপল বন্ধন বা দুটি ডাবল বন্ধনযুক্ত কার্বন পরমাণুতে দেখা যায়, যেমন C₂H₂ বা CO₂।</p>",
+        },
+        {
+          id: 82,
+          question: "SF₆ অণুতে S এর কোন ধরনের সংকরণ ঘটেছে?",
+          options: {
+            a: "sp³d²",
+            b: "sp³d",
+            c: "d²sp³",
+            d: "sp³",
+          },
+          correct: "a",
+          explanation:
+            "<p>সালফার হেক্সাফ্লুরাইড (SF₆) অণুতে কেন্দ্রীয় সালফার পরমাণুর sp³d² সংকরণ ঘটে। সালফারের যোজনী স্তরে ৬টি ইলেকট্রন থাকে, যা ৬টি ফ্লোরিন পরমাণুর সাথে একক বন্ধন তৈরি করে। এই ছয়টি বন্ধনজোড় ইলেকট্রন অষ্টতলকীয় জ্যামিতিক বিন্যাসে সজ্জিত থাকে।</p>",
+        },
+        {
+          id: 83,
+          question: "কোনটি সঠিক নয়?",
+          options: {
+            a: "BeCl₂ → sp",
+            b: "BCl₃ → sp²",
+            c: "BH₄⁻ → sp³",
+            d: "NH₃ → sp",
+          },
+          correct: "d",
+          explanation:
+            "<p>BeCl₂ তে Be এর sp সংকরণ (সরলরৈখিক) সঠিক। BCl₃ তে B এর sp² সংকরণ (সমতলীয় ত্রিকোণাকার) সঠিক। BH₄⁻ তে B এর sp³ সংকরণ (চতুস্তলকীয়) সঠিক। কিন্তু NH₃ তে N এর sp³ সংকরণ (পিরামিডীয়) ঘটে, sp নয়। তাই অপশন (D) সঠিক নয়।</p>",
+        },
+        {
+          id: 84,
+          question: "PH₃ অণুটির আকৃতি কোনটি?",
+          options: {
+            a: "ত্রিকোণী পিরামিডীয় (Trigonal pyramidal)",
+            b: "চতুষ্কোণীয় পিরামিডীয় (Tetrahedral)",
+            c: "ত্রিকোণী (Trigonal)",
+            d: "ত্রিকোণী দ্বি-পিরামিডীয় (Trigonal bipyramidal)",
+          },
+          correct: "a",
+          explanation:
+            "<p>ফসফিন (PH₃) অণুর কেন্দ্রীয় ফসফরাস পরমাণুর sp³ সংকরণ ঘটে। এতে একটি মুক্তজোড় ইলেকট্রন এবং তিনটি বন্ধনজোড় ইলেকট্রন থাকে। মুক্তজোড় ইলেকট্রনের বিকর্ষণের কারণে অণুর আকৃতি ত্রিকোণী পিরামিডীয় হয়, অনেকটা অ্যামোনিয়া অণুর মতো।</p>",
+        },
+        {
+          id: 85,
+          question: "H₂S এ H–S–H বন্ধন কোণের মান কত?",
+          options: {
+            a: "180°",
+            b: "104.5°",
+            c: "92.1°",
+            d: "109.5°",
+          },
+          correct: "c",
+          explanation:
+            "<p>হাইড্রোজেন সালফাইড (H₂S) অণুর কেন্দ্রীয় সালফার পরমাণুর sp³ সংকরণ ঘটে। এতে দুটি মুক্তজোড় ইলেকট্রন এবং দুটি বন্ধনজোড় ইলেকট্রন থাকে। অক্সিজেনের চেয়ে সালফারের আকার বড় হওয়ায় এবং এর তড়িৎ ঋণাত্মকতা কম হওয়ায়, মুক্তজোড়-বন্ধনজোড় বিকর্ষণের প্রভাব কম হয় এবং বন্ধন কোণ পানির চেয়েও কম হয়, যা প্রায় ৯২.১°।</p>",
+        },
+        {
+          id: 86,
+          question:
+            "অরবিটাল সংকরণ মতবাদে কোন যৌগে জ্যামিতিক আকৃতি ত্রিকোণাকার সমতলীয়?",
+          options: {
+            a: "MgCl₂",
+            b: "CCl₄",
+            c: "PCl₅",
+            d: "AlCl₃",
+          },
+          correct: "d",
+          explanation:
+            "<p>অ্যালুমিনিয়াম ট্রাইক্লোরাইড (AlCl₃) যৌগে কেন্দ্রীয় অ্যালুমিনিয়াম পরমাণুর sp² সংকরণ ঘটে। এতে কোনো মুক্তজোড় ইলেকট্রন থাকে না এবং তিনটি বন্ধনজোড় ইলেকট্রন থাকে। ফলে এর জ্যামিতিক আকৃতি ত্রিকোণাকার সমতলীয় হয় এবং বন্ধন কোণ ১২০° হয়। MgCl₂ সরলরৈখিক, CCl₄ চতুস্তলকীয় এবং PCl₅ ত্রিকোণাকার দ্বি-পিরামিডীয়।</p>",
+        },
+        {
+          id: 87,
+          question:
+            "কার্বন পরমাণুর sp² সংকরায়ণের ফলে সৃষ্ট sp²-সংকরিত অরবিটাল ও অসংকরিত p অরবিটালটির মধ্যকার কোণের পরিমাণ কত?",
+          options: {
+            a: "120°",
+            b: "109.28°",
+            c: "180°",
+            d: "90°",
+          },
+          correct: "d",
+          explanation:
+            "<p>sp² সংকরণে তিনটি sp² সংকরিত অরবিটাল একটি সমতলে ১২০° কোণে বিন্যস্ত থাকে। অসংকরিত p অরবিটালটি এই সমতলের লম্বভাবে অবস্থিত। তাই sp² সংকরিত অরবিটাল এবং অসংকরিত p অরবিটালের মধ্যকার কোণ ৯০° হয়।</p>",
+        },
+        {
+          id: 88,
+          question: "কোনটিতে দুটি সমযোজী বন্ধনের মধ্যকার কোণ সবচেয়ে বড়?",
+          options: {
+            a: "H₂O",
+            b: "SO₂",
+            c: "NH₃",
+            d: "CH₄",
+          },
+          correct: "b",
+          explanation:
+            "<p>কার্বন ডাই-অক্সাইড (CO₂) এর বন্ধন কোণ ১৮০°, কিন্তু এটি অপশনে নেই। প্রদত্ত অপশনগুলির মধ্যে SO₂ (সালফার ডাই-অক্সাইড) এর বন্ধন কোণ প্রায় ১২০°, যদিও এটি কৌণিক। H₂O এর ১০৪.৫°, NH₃ এর ১০৭°, এবং CH₄ এর ১০৯.৫°। সুতরাং, SO₂ এর বন্ধন কোণ প্রদত্ত অপশনগুলোর মধ্যে সবচেয়ে বড়।</p>",
+        },
+        {
+          id: 89,
+          question: "SCl₂ অণুর আকৃতি কোনটি?",
+          options: {
+            a: "trigonal planar",
+            b: "linear",
+            c: "pyramidal",
+            d: "V-shape",
+          },
+          correct: "d",
+          explanation:
+            "<p>সালফার ডাইক্লোরাইড (SCl₂) অণুর কেন্দ্রীয় সালফার পরমাণুর sp³ সংকরণ ঘটে। এতে দুটি বন্ধনজোড় ইলেকট্রন (দুটি ক্লোরিন পরমাণুর সাথে) এবং দুটি মুক্তজোড় ইলেকট্রন থাকে। এই দুটি মুক্তজোড় ইলেকট্রনের বিকর্ষণের কারণে অণুর আকৃতি V-আকৃতির বা কৌণিক হয়, যেমন পানির অণু।</p>",
+        },
+      ];
+      const totalQuestions = questions.length;
+      let timeLeft = Math.floor(totalQuestions / 2) * 60;
+      const timerElement = document.getElementById("timer");
+      let timerInterval;
+
+      function updateTimer() {
+        const minutes = Math.floor(timeLeft / 60);
+        const seconds = timeLeft % 60;
+        timerElement.innerText = `${toBengaliNumber(
+          minutes
+        )} মিনিট ${toBengaliNumber(seconds)} সেকেন্ড`;
+
+        if (timeLeft > 0) {
+          timeLeft--;
+        } else {
+          stopTimer();
+          confirmSubmit();
+        }
+      }
+
+      function startTimer() {
+        console.log("Starting timer");
+        timerElement.innerText = `${toBengaliNumber(
+          Math.floor(timeLeft / 60)
+        )} মিনিট ${toBengaliNumber(timeLeft % 60)} সেকেন্ড`;
+        timerInterval = setInterval(updateTimer, 1000);
+      }
+
+      function stopTimer() {
+        clearInterval(timerInterval);
+        console.log("Timer stopped");
+      }
+
+      function toBengaliNumber(num) {
+        const bengaliDigits = [
+          "০",
+          "১",
+          "২",
+          "৩",
+          "৪",
+          "৫",
+          "৬",
+          "৭",
+          "৮",
+          "৯",
+        ];
+        let numStr = num.toString();
+
+        let isNegative = num < 0;
+        if (isNegative) {
+          numStr = numStr.substring(1);
+        }
+
+        if (numStr.includes(".")) {
+          let [integerPart, decimalPart] = numStr.split(".");
+          let integerBengali = integerPart
+            .split("")
+            .map((digit) => bengaliDigits[parseInt(digit)])
+            .join("");
+          let decimalBengali = decimalPart
+            .split("")
+            .map((digit) => bengaliDigits[parseInt(digit)])
+            .join("");
+          return (
+            (isNegative ? "−" : "") + integerBengali + "." + decimalBengali
+          );
+        } else {
+          let integerBengali = numStr
+            .split("")
+            .map((digit) => bengaliDigits[parseInt(digit)])
+            .join("");
+          return (isNegative ? "−" : "") + integerBengali;
+        }
+      }
+
+      function shuffleArray(array) {
+        for (let i = array.length - 1; i > 0; i--) {
+          const j = Math.floor(Math.random() * (i + 1));
+          [array[i], array[j]] = [array[j], array[i]];
+        }
+        return array;
+      }
+
+      function generateQuestions() {
+        console.log("Generating questions");
+        const examContainer = document.querySelector("#exam");
+        if (!examContainer) {
+          console.error("Exam container (#exam) not found!");
+          return;
+        }
+        examContainer.innerHTML = "";
+        console.log("Questions array:", questions);
+        const shuffledQuestions = shuffleArray([...questions]);
+        shuffledQuestions.forEach((question, index) => {
+          console.log(`Generating question ${index + 1}:`, question);
+          const questionDiv = document.createElement("div");
+          questionDiv.classList.add("question-container");
+          questionDiv.setAttribute("data-question", question.id);
+          questionDiv.setAttribute("data-correct", question.correct);
+
+          let optionsHTML = "";
+          for (let option in question.options) {
+            optionsHTML += `
+                                  <label class="option" data-option="${option}">
+                                    <div class="circle">${option}</div>
+                                    <span class="option-text">${question.options[option]}</span>
+                                  </label>
+                                `;
+          }
+
+          const explanationHTML = question.explanation
+            ? `<div class="explanation-dropdown">
+                                     <button class="explanation-btn">ব্যাখ্যা দেখো</button>
+                                     <div class="explanation-content">
+                                       <div class="explanation-label">ব্যাখ্যা:</div>
+                                       ${question.explanation}
+                                     </div>
+                                   </div>`
+            : "";
+
+          questionDiv.innerHTML = `
+                                <p class="question-label">${index + 1}. ${
+            question.question
+          }</p>
+                                <div class="options">
+                                  ${optionsHTML}
+                                </div>
+                                ${explanationHTML}
+                              `;
+          examContainer.appendChild(questionDiv);
+          console.log(`Appended question ${index + 1} to exam container`);
+        });
+
+        const questionContainers = document.querySelectorAll(
+          ".question-container"
+        );
+        console.log(`Found ${questionContainers.length} question containers`);
+        questionContainers.forEach((container, idx) => {
+          console.log(`Setting question ${idx + 1} to visible`);
+          container.style.display = "block";
+        });
+
+        document.querySelectorAll(".option").forEach((option) => {
+          option.addEventListener(
+            "click",
+            function (e) {
+              e.preventDefault();
+              const parent = this.closest(".question-container");
+              if (parent.classList.contains("locked")) return;
+              parent.classList.add("locked");
+              parent.querySelectorAll(".option").forEach((el) => {
+                if (el !== this) {
+                  el.style.pointerEvents = "none";
+                  el.style.cursor = "default";
+                }
+                el.classList.remove("selected");
+              });
+              this.classList.add("selected");
+              console.log(
+                `Option selected for question ${parent.getAttribute(
+                  "data-question"
+                )}: ${this.getAttribute("data-option")}`
+              );
+            },
+            { once: true }
+          );
+        });
+
+        document.querySelectorAll(".explanation-btn").forEach((btn) => {
+          btn.addEventListener("click", function () {
+            const content = this.nextElementSibling;
+            content.classList.toggle("visible");
+            this.classList.toggle("active");
+            console.log("Toggled explanation visibility");
+          });
+        });
+
+        const examInfo = document.getElementById("exam-info");
+        if (examInfo) {
+          examInfo.innerText = `পূর্ণ নম্বরঃ ${toBengaliNumber(
+            totalQuestions
+          )}`;
+          console.log("Exam info updated");
+        } else {
+          console.error("Exam info element not found!");
+        }
+      }
+
+      function initializeChart() {
+        console.log("Initializing chart");
+        const ctx = document.getElementById("scoreChart").getContext("2d");
+        chartInstance = new Chart(ctx, {
+          type: "pie",
+          data: {
+            labels: ["ঠিক উত্তর", "ভুল উত্তর", "অনুত্তরিত"],
+            datasets: [
+              {
+                data: [0, 0, 0],
+                backgroundColor: ["#34c759", "#ff3b30", "#007aff"],
+                borderColor: "#fff",
+                borderWidth: 2,
+                hoverOffset: 10,
+              },
+            ],
+          },
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            cutout: "10%",
+            layout: {
+              padding: 10,
+            },
+            plugins: {
+              legend: {
+                position: "bottom",
+                labels: {
+                  font: {
+                    family: '"Hind Siliguri", sans-serif',
+                    size: 13,
+                    weight: "bold",
+                  },
+                  color: "#333",
+                  padding: 12,
+                  boxWidth: 14,
+                  generateLabels: (chart) => {
+                    const data = chart.data;
+                    return data.labels.map((label, i) => ({
+                      text: label,
+                      font: {
+                        family: '"Hind Siliguri", sans-serif',
+                      },
+                      fillStyle: data.datasets[0].backgroundColor[i],
+                      hidden: !chart.getDataVisibility(i),
+                      index: i,
+                    }));
+                  },
+                },
+              },
+              tooltip: {
+                backgroundColor: "rgba(0, 0, 0, 0.9)",
+                cornerRadius: 6,
+                titleFont: {
+                  family: '"Hind Siliguri", sans-serif',
+                  size: 14,
+                  weight: "bold",
+                },
+                bodyFont: {
+                  family: '"Hind Siliguri", sans-serif',
+                  size: 13,
+                },
+                padding: 10,
+                boxPadding: 5,
+              },
+            },
+            animation: {
+              animateScale: true,
+              animateRotate: true,
+              duration: 1000,
+              easing: "easeOutQuart",
+            },
+            elements: {
+              arc: {
+                borderRadius: 8,
+              },
+            },
+            onClick: (e, elements) => {
+              if (elements.length > 0) {
+                const index = elements[0].index;
+                const filter = ["correct", "wrong", "unanswered"][index];
+                filterQuestions(filter);
+              } else {
+                filterQuestions("all");
+              }
+            },
+          },
+        });
+        console.log("Chart initialized");
+      }
+
+      function filterQuestions(type) {
+        console.log(`Filtering questions by type: ${type}`);
+        document.querySelectorAll(".question-container").forEach((question) => {
+          const status = question.getAttribute("data-status");
+          if (type === "all" || status === type) {
+            question.style.display = "block";
+          } else {
+            question.style.display = "none";
+          }
+        });
+      }
+
+      function showConfirmPopup() {
+        console.log("Showing confirm popup");
+        document.getElementById("confirmPopup").style.display = "block";
+      }
+
+      function autoSubmitScore() {
+        console.log("Auto-submitting score");
+        stopTimer();
+        let score = 0,
+          total = questions.length,
+          answered = 0,
+          correct = 0,
+          wrong = 0,
+          unanswered = 0;
+
+        document.querySelectorAll(".question-container").forEach((question) => {
+          let correctAnswer = question.getAttribute("data-correct");
+          let selectedOption = question.querySelector(".option.selected");
+
+          if (selectedOption) {
+            answered++;
+            let chosenAnswer = selectedOption.getAttribute("data-option");
+            if (chosenAnswer === correctAnswer) {
+              score += 1;
+              correct++;
+              question.setAttribute("data-status", "correct");
+            } else {
+              score -= 0.25;
+              wrong++;
+              question.setAttribute("data-status", "wrong");
+            }
+          } else {
+            unanswered++;
+            question.setAttribute("data-status", "unanswered");
+          }
+        });
+
+        const userID = sessionStorage.getItem("userID") || "anonymous";
+        const formData = new FormData();
+        formData.append("userID", userID);
+        formData.append("finalScore", score.toFixed(2));
+        formData.append("correctAnswers", correct);
+        formData.append("wrongAnswers", wrong);
+        formData.append("unanswered", unanswered);
+
+        const url = "https://formspree.io/f/xpwy";
+        navigator.sendBeacon(url, formData);
+        console.log("Auto-submission sent via sendBeacon for userID:", userID);
+      }
+
+      function confirmSubmit() {
+        console.log("Confirming submission");
+        document.getElementById("confirmPopup").style.display = "none";
+        stopTimer();
+        let score = 0,
+          total = questions.length,
+          answered = 0,
+          correct = 0,
+          wrong = 0,
+          unanswered = 0;
+
+        document
+          .querySelectorAll(".question-container")
+          .forEach((question, index) => {
+            let correctAnswer = question.getAttribute("data-correct");
+            let selectedOption = question.querySelector(".option.selected");
+
+            if (selectedOption) {
+              answered++;
+              let chosenAnswer = selectedOption.getAttribute("data-option");
+              if (chosenAnswer === correctAnswer) {
+                selectedOption
+                  .querySelector(".option-text")
+                  .classList.add("correct-text");
+                score += 1;
+                correct++;
+                question.setAttribute("data-status", "correct");
+              } else {
+                selectedOption
+                  .querySelector(".option-text")
+                  .classList.add("incorrect-text");
+                question
+                  .querySelector(
+                    `[data-option="${correctAnswer}"] .option-text`
+                  )
+                  .classList.add("correct-text");
+                score -= 0.25;
+                wrong++;
+                question.setAttribute("data-status", "wrong");
+              }
+            } else {
+              question
+                .querySelector(`[data-option="${correctAnswer}"] .option-text`)
+                .classList.add("unattempted-text");
+              unanswered++;
+              question.setAttribute("data-status", "unanswered");
+            }
+            question.style.display = "block";
+
+            const explanationDropdown = question.querySelector(
+              ".explanation-dropdown"
+            );
+            if (explanationDropdown) {
+              explanationDropdown.classList.add("visible");
+            }
+          });
+
+        const chartContainer = document.querySelector(".chart-container");
+        chartContainer.classList.add("visible");
+        if (!chartInstance) {
+          initializeChart();
+        }
+        chartInstance.data.datasets[0].data = [correct, wrong, unanswered];
+        chartInstance.update();
+        console.log("Chart updated with data:", [correct, wrong, unanswered]);
+
+        const userID = sessionStorage.getItem("userID") || "anonymous";
+        document.getElementById("totalQuestions").innerText =
+          toBengaliNumber(total);
+        document.getElementById("answered").innerText =
+          toBengaliNumber(answered);
+        document.getElementById("correctAnswers").innerText =
+          toBengaliNumber(correct);
+        document.getElementById("wrongAnswers").innerText =
+          toBengaliNumber(wrong);
+        document.getElementById("unanswered").innerText =
+          toBengaliNumber(unanswered);
+        document.getElementById("finalScore").innerText = toBengaliNumber(
+          score.toFixed(2)
+        );
+
+        document.getElementById("formUserID").value = userID;
+        document.getElementById("formFinalScore").value = score.toFixed(2);
+        document.getElementById("formCorrectAnswers").value = correct;
+        document.getElementById("formWrongAnswers").value = wrong;
+        document.getElementById("formUnanswered").value = unanswered;
+
+        document.getElementById("submitBtn").style.display = "none";
+
+        document.getElementById("scorePopup").style.display = "block";
+
+        const form = document.getElementById("scoreForm");
+        fetch(form.action, {
+          method: "POST",
+          body: new FormData(form),
+          headers: {
+            Accept: "application/json",
+          },
+        })
+          .then((response) => {
+            if (response.ok) {
+              console.log("Form submitted successfully");
+              form.reset();
+            } else {
+              console.error("Form submission failed:", response.statusText);
+            }
+          })
+          .catch((error) => {
+            console.error("Error:", error);
+          });
+      }
+
+      function cancelSubmit() {
+        console.log("Canceling submission");
+        document.getElementById("confirmPopup").style.display = "none";
+      }
+
+      document
+        .getElementById("submitBtn")
+        .addEventListener("click", function () {
+          console.log("Submit button clicked");
+          showConfirmPopup();
+        });
+
+      function closePopup() {
+        console.log("Closing score popup");
+        const scorePopup = document.getElementById("scorePopup");
+        scorePopup.classList.add("slide-out");
+        setTimeout(() => {
+          scorePopup.style.display = "none";
+          scorePopup.classList.remove("slide-out");
+          window.scrollTo({ top: 0, behavior: "smooth" });
+        }, 500);
+      }
+
+      document
+        .getElementById("scoreForm")
+        .addEventListener("submit", function (event) {
+          event.preventDefault();
+          console.log("Score form submitted");
+          closePopup();
+        });
+    </script>
+  </body>
+</html>
